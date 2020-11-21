@@ -1,0 +1,166 @@
+Package minipython;
+
+Helpers
+	digit = ['0' .. '9'];
+	letter = ['a' .. 'z']|['A' .. 'Z']; 
+	cr = 13; 
+	lf = 10;
+	all = [0..127]; 
+	eol = lf | cr | cr lf ;
+	not_eol = [all - [cr + lf]]; 
+
+Tokens
+	def = 'def';
+	l_par = '(';
+	r_par = ')';
+	semi = ':';
+	assign = '=';
+	comma=',';
+	tab = 9;
+	if = 'if';
+	while = 'while';
+	for = 'for';
+	in = 'in';
+	return = 'return';
+	print = 'print';
+	assign_minus = '-=';
+	assign_div = '/=';
+	l_br = '[';
+	r_br = ']';
+	assert = 'assert';
+	plus = '+';
+	minus = '-';
+	mult = '*';
+	multmult = '**';
+	div = '/';
+	mod = '%';
+	open = 'open';
+	type = 'type';
+	max = 'max';
+	min = 'min';
+	and = 'and';
+	or = 'or';
+	not = 'not';
+	less = '<';
+	great = '>';
+	geq = '>=';
+	leq = '<=';
+	eq = '==';
+	neq = '!=';
+	true = 'true';
+	false = 'false';
+	dot = '.';
+	none = 'None';
+	line_comment = '#' not_eol* eol; 
+	number = digit+ | (digit+ '.' digit+);
+	id = letter (letter | digit)*;
+	string = ('"' | ''')not_eol* ('"' | ''');
+	blank = (' ' | lf | cr);
+	
+Ignored Tokens
+	blank, line_comment;
+
+Productions
+	goal = commands*;
+	
+	commands = {fun} function | 
+	           {stat} statement;
+
+	function = def id l_par argument? r_par semi statement;
+	
+	argument = id c1? c*;
+	c = comma id c1? ;
+	c1 = eq value;
+	
+	statement = {if} tab* if comparison semi statement |
+			    {while} tab* while comparison semi statement |
+				{for} tab* for [forid]:id in [inid]:id semi statement |
+				{return} tab* return expression |
+				{print} tab* print expression c2* |
+				{assignment} tab* id c3 expression |
+				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression |
+				{assert} tab* assert expression c2? |
+				{func} tab* function_call;
+	
+	c3 = {ass1} assign | 
+	     {ass2} assign_minus | 
+		 {ass3} assign_div;
+		
+	
+	expression = {math}[lpar]:expression c4 [rpar]:expression |
+				 {listexp} id l_br expression r_br |
+				 {func_call} function_call |
+				 {value} value |
+				 {id} id |
+				 {open} open l_par [lpar]:expression comma [rpar]:expression r_par |
+				 {type} type l_par id r_par |
+				 {max} max l_par value c5+ r_par |
+				 {min} min l_par value c5+ r_par |
+				 {par} l_par expression r_par |
+				 {list_con} l_br expression c2* r_br;
+	
+	c4 = {one} plus | 
+	     {two} minus | 
+		 {three} mult | 
+		 {four} div | 
+		 {five} mod | 
+		 {six} multmult;
+	c5 = comma value;
+				
+	comparison = {logic} [lcom]:comparison c7 [rcom]:comparison|
+				 {not} not comparison |
+				 {eqexp} [lpar]:expression c6 [rpar]:expression |
+				 {true} true|
+				 {false} false;
+				 
+	c6 = {seven} great | 
+	     {eight} less | 
+		 {nine} geq | 
+		 {ten} leq | 
+		 {eleven} neq | 
+		 {twelve} eq;
+	c7 = {uno} and | 
+	     {duo} or;
+			
+	function_call = id l_par arglist? r_par;
+	
+	arglist = expression c2*;
+	c2 = comma expression;
+	
+	value = {method} id dot function_call |
+		    {num} number | 
+			{string} string |
+			{none} none;
+	
+	num = number;
+	
+	ident = id;
+	
+				
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
