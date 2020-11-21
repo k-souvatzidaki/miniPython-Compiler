@@ -14,6 +14,8 @@ The instructions set of miniPython is a **subset of Python's instructions** . It
 The syntax of miniPython's instruction set is described in the Backus–Naur form (or Backus normal form - **BNF**) in the file BNF.html.
 ..
 
+## SableCC
+We used the [SableCC](https://sablecc.org/) parser generator to create this compiler.
 ## Group
 [Themelina Kouzoumpasi](https://github.com/themelinaKz)
 [Lydia Athanasiou](https://github.com/lydia-ath)  
