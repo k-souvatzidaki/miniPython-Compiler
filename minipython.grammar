@@ -66,24 +66,22 @@ Productions
 	commands = {fun} function | 
 	           {stat} statement;
 			   
-	
 	function = def id l_par argument? r_par semi statement;
-	argument = id c1? c*;
-	c = comma id c1? ;
-	c1 = assign value;
+	argument = id assign_v? comma_assign*;
+	comma_assign = comma id assign_v? ;
+	assign_v = assign value;
 	
 	statement = {if} tab* if comparison semi statement |
 			    {while} tab* while comparison semi statement |
 				{for} tab* for [forid]:id in [inid]:id semi statement |
 				{return} tab* return expression |
-				{print} tab* print expression c2* |
+				{print} tab* print expression comma_exp* |
 				{assign} tab* id assign expression |
 				{assignmin} tab* id assign_minus expression |
 				{assigndiv} tab* id assign_div expression |
 				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression |
-				{assert} tab* assert expression c2? |
+				{assert} tab* assert expression comma_exp? |
 				{func} tab* function_call;
-
 
 	expression = {expr} expr|
 				 {plus} expression plus expr|
@@ -98,11 +96,11 @@ Productions
 		   {id} id| 
 		   {open} open l_par [lpar]:expr comma [rpar]:expr r_par|
 		   {type} type l_par id r_par|
-		   {max} max l_par value c5+ r_par|
-		   {min} min l_par value c5+ r_par|
+		   {max} max l_par value comma_v+ r_par|
+		   {min} min l_par value comma_v+ r_par|
 		   {par} l_par expr r_par|
-		   {list_con} l_br expr c2* r_br;
-	c5 = comma value;
+		   {list_con} l_br expr comma_exp* r_br;
+	comma_v = comma value;
 	
 	
 	comparison = {comp} comp |
@@ -121,8 +119,8 @@ Productions
 			
 	function_call = id l_par arglist? r_par;
 	
-	arglist = expression c2*;
-	c2 = comma expression;
+	arglist = expression comma_exp*;
+	comma_exp = comma expression;
 	
 	value = {method} id dot function_call |
 		    {num} number | 
