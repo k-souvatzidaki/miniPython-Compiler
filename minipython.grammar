@@ -7,7 +7,7 @@ Helpers
 	lf = 10;
 	all = [0..127]; 
 	eol = lf | cr | cr lf ;
-	not_eol = [all - [cr + lf]]; 
+	not_eol = [all - [cr + lf]] ; 
 
 Tokens
 	def = 'def';
@@ -87,17 +87,18 @@ Productions
 		 {ass3} assign_div;
 		
 	
-	expression = {math}[lpar]:expression c4 [rpar]:expression |
-				 {listexp} id l_br expression r_br |
-				 {func_call} function_call |
-				 {value} value |
-				 {id} id |
-				 {open} open l_par [lpar]:expression comma [rpar]:expression r_par |
-				 {type} type l_par id r_par |
-				 {max} max l_par value c5+ r_par |
-				 {min} min l_par value c5+ r_par |
-				 {par} l_par expression r_par |
-				 {list_con} l_br expression c2* r_br;
+	
+	expression = {listexp} id l_br expression r_br expression_t|
+				 {func_call} function_call expression_t|
+				 {value} value expression_t |
+				 {id} id expression_t| 
+				 {open} open l_par [lpar]:expression comma [rpar]:expression r_par expression_t|
+				 {type} type l_par id r_par expression_t|
+				 {max} max l_par value c5+ r_par expression_t|
+				 {min} min l_par value c5+ r_par expression_t|
+				 {par} l_par expression r_par expression_t|
+				 {list_con} l_br expression c2* r_br expression_t;
+	expression_t = {math}c4 [rpar]:expression expression_t ;
 	
 	c4 = {one} plus | 
 	     {two} minus | 
@@ -106,12 +107,16 @@ Productions
 		 {five} mod | 
 		 {six} multmult;
 	c5 = comma value;
-				
-	comparison = {logic} [lcom]:comparison c7 [rcom]:comparison|
-				 {not} not comparison |
-				 {eqexp} [lpar]:expression c6 [rpar]:expression |
-				 {true} true|
-				 {false} false;
+	
+		
+	
+	comparison = {eqexp} [lpar]:expression c6 [rpar]:expression comparison_t|
+				 {true} true comparison_t|
+				 {false} false comparison_t|
+				 {not} not comparison comparison_t ;
+	comparison_t = {logic} c7 [rcom]:comparison comparison_t;
+					
+
 				 
 	c6 = {seven} great | 
 	     {eight} less | 
