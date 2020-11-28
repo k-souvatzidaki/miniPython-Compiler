@@ -65,29 +65,26 @@ Productions
 	
 	commands = {fun} function | 
 	           {stat} statement;
-
-	function = def id l_par argument? r_par semi statement;
+			   
 	
+	function = def id l_par argument? r_par semi statement;
 	argument = id c1? c*;
 	c = comma id c1? ;
-	c1 = eq value;
+	c1 = assign value;
 	
 	statement = {if} tab* if comparison semi statement |
 			    {while} tab* while comparison semi statement |
 				{for} tab* for [forid]:id in [inid]:id semi statement |
 				{return} tab* return expression |
 				{print} tab* print expression c2* |
-				{assignment} tab* id c3 expression |
+				{assign} tab* id assign expression |
+				{assignmin} tab* id assign_minus expression |
+				{assigndiv} tab* id assign_div expression |
 				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression |
 				{assert} tab* assert expression c2? |
 				{func} tab* function_call;
-	
-	c3 = {ass1} assign | 
-	     {ass2} assign_minus | 
-		 {ass3} assign_div;
-		
-	
-	
+
+
 	expression = {expr} expr|
 				 {plus} expression plus expr|
 				 {minus} expression minus expr|
