@@ -83,23 +83,26 @@ Productions
 				{assert} tab* assert expression comma_exp? |
 				{func} tab* function_call;
 
-	expression = {expr} expr|
-				 {plus} expression plus expr|
-				 {minus} expression minus expr|
-				 {mult} expression mult expr|
-				 {div} expression div expr|
-				 {mod} expression mod expr|
-				 {multmult} expression multmult expr;
-	expr = {listexp} id l_br expr r_br|
-		   {func_call} function_call|
-		   {value} value|
-		   {id} id| 
+		
+	expression =  {expr_div} expression_div |
+				  {plus} expression_div plus expression|
+				  {minus} expression_div minus expression;
+	expression_div = {expr} expr|
+					{mult} expr mult expression_div|
+					{div} expr div expression_div|
+					{mod} expr mod expression_div|
+					{multmult} expr multmult expression_div;
+	expr = {sth} something |
+		   {listexp} id l_br expr r_br|
 		   {open} open l_par [lpar]:expr comma [rpar]:expr r_par|
-		   {type} type l_par id r_par|
-		   {max} max l_par value comma_v+ r_par|
-		   {min} min l_par value comma_v+ r_par|
-		   {par} l_par expr r_par|
 		   {list_con} l_br expr comma_exp* r_br;
+	something = {func_call} function_call|
+				{value} value|
+				{id} id| 			
+				{type} type l_par id r_par|
+				{max} max l_par value comma_v+ r_par|
+				{min} min l_par value comma_v+ r_par|
+				{par} l_par expression r_par;
 	comma_v = comma value;
 	
 	
