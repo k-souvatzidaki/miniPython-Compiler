@@ -71,8 +71,8 @@ Productions
 	comma_assign = comma id assign_v? ;
 	assign_v = assign value;
 	
-	statement = {if} tab* if comparison semi statement |
-			    {while} tab* while comparison semi statement |
+	statement = {if} tab* if comparison_or semi statement |
+			    {while} tab* while comparison_or semi statement |
 				{for} tab* for [forid]:id in [inid]:id semi statement |
 				{return} tab* return expression |
 				{print} tab* print expression comma_exp* |
@@ -103,9 +103,10 @@ Productions
 	comma_v = comma value;
 	
 	
-	comparison = {comp} comp |
-				 {and} comparison and comp| 
-				 {or} comparison or comp;
+	comparison_or = {comp} comparison_and |
+					{or} comparison_or or comparison_and;
+	comparison_and = {comp} comp |
+					 {and} comparison_and and comp;
 	comp = {true} true|
 		   {false} false|
 		   {less} [lpar]:expression less [rpar]:expression|
