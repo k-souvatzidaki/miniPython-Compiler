@@ -82,16 +82,20 @@ Productions
 				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression |
 				{assert} tab* assert expression comma_exp? |
 				{func} tab* function_call;
-
-		
-	expression =  {expr_div} expression_div |
-				  {plus} expression_div plus expression|
-				  {minus} expression_div minus expression;
-	expression_div = {expr} expr|
-					{mult} expr mult expression_div|
-					{div} expr div expression_div|
-					{mod} expr mod expression_div|
-					{multmult} expr multmult expression_div;
+	
+	
+	expression = {expr_add} expression_add|
+				 {minus} expression_add minus expression;
+	expression_add = {expr_mod} expression_mod|
+					 {add} expression_mod plus expression_add;
+	expression_mod = {expr_div} expression_div|
+					 {mod} expression_div mod expression_mod;
+	expression_div = {expr_mult} expression_mult|
+					 {div} expression_mult div expression_div;
+	expression_mult = {expr_multmult} expression_multmult|
+					  {mult} expression_multmult mult expression_mult;			  
+	expression_multmult = {expr} expr|
+						  {multmult} expr multmult expression_multmult;
 	expr = {sth} something |
 		   {listexp} id l_br expr r_br|
 		   {open} open l_par [lpar]:expr comma [rpar]:expr r_par|
