@@ -54,7 +54,7 @@ Tokens
 	line_comment = '#' not_eol* eol; 
 	number = digit+ | (digit+ '.' digit+);
 	id = letter (letter | digit)*;
-	string = ('"' | ''')not_eol* ('"' | ''');
+	string = '"' not_eol* '"' | ''' not_eol* ''';
 	blank = (' ' | lf | cr);
 	
 Ignored Tokens
@@ -84,22 +84,19 @@ Productions
 				{func} tab* function_call;
 	
 	
-	expression = {expr_add} expression_add|
-				 {minus} expression_add minus expression;
-	expression_add = {expr_mod} expression_mod|
-					 {add} expression_mod plus expression_add;
-	expression_mod = {expr_div} expression_div|
-					 {mod} expression_div mod expression_mod;
-	expression_div = {expr_mult} expression_mult|
-					 {div} expression_mult div expression_div;
-	expression_mult = {expr_multmult} expression_multmult|
-					  {mult} expression_multmult mult expression_mult;			  
+	expression = {expr_mod} expression_mod|
+				 {minus} expression_mod minus expression | 
+				 {add} expression_mod plus expression;
+	expression_mod = {expr_multmult} expression_multmult|
+					 {mod} expression_multmult mod expression_mod |
+					 {div} expression_multmult div expression_mod |
+					 {mult} expression_multmult mult expression_mod;	  
 	expression_multmult = {expr} expr|
 						  {multmult} expr multmult expression_multmult;
 	expr = {sth} something |
-		   {listexp} id l_br expr r_br|
-		   {open} open l_par [lpar]:expr comma [rpar]:expr r_par|
-		   {list_con} l_br expr comma_exp* r_br;
+		   {listexp} id l_br expression r_br|
+		   {open} open l_par [lpar]:expression comma [rpar]:expression r_par|
+		   {list_con} l_br expression comma_exp* r_br;
 	something = {func_call} function_call|
 				{value} value|
 				{id} id| 			
@@ -112,8 +109,10 @@ Productions
 	
 	comparison_or = {comp} comparison_and |
 					{or} comparison_or or comparison_and;
-	comparison_and = {comp} comp |
-					 {and} comparison_and and comp;
+	comparison_and = {not_comp} not_comp |
+					 {and} comparison_and and not_comp;
+	not_comp = {comp} comp |
+			   {not} not not_comp;
 	comp = {true} true|
 		   {false} false|
 		   {less} [lpar]:expression less [rpar]:expression|
@@ -121,8 +120,7 @@ Productions
 		   {geq} [lpar]:expression geq [rpar]:expression|
 		   {leq} [lpar]:expression leq [rpar]:expression|
 		   {neq} [lpar]:expression neq [rpar]:expression|
-		   {eq} [lpar]:expression eq [rpar]:expression|
-		   {not} not comp;
+		   {eq} [lpar]:expression eq [rpar]:expression;
 				 
 			
 	function_call = id l_par arglist? r_par;
