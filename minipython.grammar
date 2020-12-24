@@ -61,77 +61,77 @@ Ignored Tokens
 	blank, line_comment;
 
 Productions
-	goal = commands*;
+	goal = commands*{-> New goal( [commands] ) };
 	
-	commands = {fun} function | 
-	           {stat} statement;
+	commands = {fun} function{-> New commands.fun(function)} | 
+	           {stat} statement{-> New commands.stat(statement)} ;
 			   
-	function = def id l_par argument? r_par semi statement;
-	argument = id assign_v? comma_assign*;
-	comma_assign = comma id assign_v? ;
-	assign_v = assign value;
+	function = def id l_par argument? r_par semi statement{-> New function(id,[argument],statement)};
+	argument = id assign_v? comma_assign*{-> New argument(id,[assign_v],[comma_assign])};
+	comma_assign = comma id assign_v?{-> New comma_assign(id,[assign_v])};
+	assign_v = assign value{-> New assign_v(value)};
 	
-	statement = {if} tab* if comparison_or semi statement |
-			    {while} tab* while comparison_or semi statement |
-				{for} tab* for [forid]:id in [inid]:id semi statement |
-				{return} tab* return expression |
-				{print} tab* print expression comma_exp* |
-				{assign} tab* id assign expression |
-				{assignmin} tab* id assign_minus expression |
-				{assigndiv} tab* id assign_div expression |
-				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression |
-				{assert} tab* assert expression comma_exp? |
-				{func} tab* function_call;
-	
-	
-	expression = {expr_mod} expression_mod|
-				 {minus} expression_mod minus expression | 
-				 {add} expression_mod plus expression;
-	expression_mod = {expr_multmult} expression_multmult|
-					 {mod} expression_multmult mod expression_mod |
-					 {div} expression_multmult div expression_mod |
-					 {mult} expression_multmult mult expression_mod;	  
-	expression_multmult = {expr} expr|
-						  {multmult} expr multmult expression_multmult;
-	expr = {sth} something |
-		   {listexp} id l_br expression r_br|
-		   {open} open l_par [lpar]:expression comma [rpar]:expression r_par|
-		   {list_con} l_br expression comma_exp* r_br;
-	something = {func_call} function_call|
-				{value} value|
-				{id} id| 			
-				{type} type l_par id r_par|
-				{max} max l_par value comma_v+ r_par|
-				{min} min l_par value comma_v+ r_par|
-				{par} l_par expression r_par;
-	comma_v = comma value;
+	statement = {if} tab* if comparison_or semi statement{-> New statement.if(comparison_or,statement)} |
+			    {while} tab* while comparison_or semi statement{-> New statement.while(comparison_or,statement)} |
+				{for} tab* for [forid]:id in [inid]:id semi statement{-> New statement.for(forid,inid,statement)} |
+				{return} tab* return expression{-> New statement.return(expression)} |
+				{print} tab* print expression comma_exp*{-> New statement.print(expression,[comma_exp])} |
+				{assign} tab* id assign expression{-> New statement.assign(id, expression)} |
+				{assignmin} tab* id assign_minus expression{-> New statement.assignmin(id, expression)} |
+				{assigndiv} tab* id assign_div expression{-> New statement.assigndiv(id, expression)} |
+				{list} tab* id l_br [lbr]:expression r_br assign [rbr]:expression{-> New statement.list(id,lbr,rbr)} |
+				{assert} tab* assert expression comma_exp?{-> New statement.assert(expression,[comma_exp])} |
+				{func} tab* function_call{-> New statement.func(function_call)};
 	
 	
-	comparison_or = {comp} comparison_and |
-					{or} comparison_or or comparison_and;
-	comparison_and = {not_comp} not_comp |
-					 {and} comparison_and and not_comp;
-	not_comp = {comp} comp |
-			   {not} not not_comp;
-	comp = {true} true|
-		   {false} false|
-		   {less} [lpar]:expression less [rpar]:expression|
-		   {great} [lpar]:expression great [rpar]:expression|
-		   {geq} [lpar]:expression geq [rpar]:expression|
-		   {leq} [lpar]:expression leq [rpar]:expression|
-		   {neq} [lpar]:expression neq [rpar]:expression|
-		   {eq} [lpar]:expression eq [rpar]:expression;
+	expression = {expr_mod} expression_mod{->expression_mod.expression}|
+				 {minus} expression_mod minus expression{->New expression.minus(expression_mod.expression,expression)} | 
+				 {add} expression_mod plus expression{->New expression.add(expression_mod.expression,expression)};
+	expression_mod{->expression} = {expr_multmult} expression_multmult{->expression_multmult.expression}|
+					 {mod} expression_multmult mod expression_mod{->New expression.mod(expression_multmult.expression,expression_mod.expression)} |
+					 {div} expression_multmult div expression_mod{->New expression.div(expression_multmult.expression,expression_mod.expression)} |
+					 {mult} expression_multmult mult expression_mod{->New expression.mult(expression_multmult.expression,expression_mod.expression)};	  
+	expression_multmult{->expression} = {expr} expr{->expression}|
+						  {multmult} expr multmult expression_multmult{->New expression.multmult(expr.expression,expression_multmult.expression)};
+	expr{->expression} = {sth} something{->something} |
+		   {listexp} id l_br expression r_br{->New expression.listexp(id,expression)}|
+		   {open} open l_par [lpar]:expression comma [rpar]:expression r_par{->New expression.open(lpar,rpar)}|
+		   {list_con} l_br expression comma_exp* r_br{->New expression.list_con(expression,[comma_expression])};
+	something = {func_call} function_call{->New something.func_call(function_call)}|
+				{value} value{->New something.value(value)}|
+				{id} id{->New something.id(id)}| 			
+				{type} type l_par id r_par{->New something.type(id)}|
+				{max} max l_par value comma_v+ r_par{->New something.max(value,[comma_v])}|
+				{min} min l_par value comma_v+ r_par{->New something.min(value,[comma_v])}|
+				{par} l_par expression r_par{->New something.par(expression)};
+	comma_v = comma value{->New comma_v(value)};
+	
+	
+	comparison_or = {comp} comparison_and {-> comparison_and.comparison_or} |
+					{or} comparison_or or comparison_and {->New comparison_or.or(comparison_or,comparison_and.comparison_or)};
+	comparison_and{->comparison_or} = {not_comp} not_comp {-> comp_not.comparison_or}|
+					 {and} comparison_and and not_comp{->New comparison_and.and(comparison_and.comparison_or,comp_not.comparison_or)};
+	not_comp{->comparison_or} = {comp} comp {-> comp.comparison_or}|
+			   {not} not not_comp{->New comparison_or.not(not_comp.comparison_or)};
+	comp{->comparison_or} = {true} true{->New comparison_or.true()}|
+		   {false} false{->New comparison_or.false()}|
+		   {less} [lpar]:expression less [rpar]:expression {->New comparison_or.less(lpar,rpar)}|
+		   {great} [lpar]:expression great [rpar]:expression {->New comparison_or.great(lpar,rpar)}|
+		   {geq} [lpar]:expression geq [rpar]:expression {->New comparison_or.geq(lpar,rpar)}|
+		   {leq} [lpar]:expression leq [rpar]:expression {->New comparison_or.leq(lpar,rpar)}|
+		   {neq} [lpar]:expression neq [rpar]:expression {->New comparison_or.neq(lpar,rpar)}|
+		   {eq} [lpar]:expression eq [rpar]:expression {->New comparison_or.eq(lpar,rpar)};
 				 
 			
-	function_call = id l_par arglist? r_par;
+	function_call = id l_par arglist? r_par {->New function_call(id,[arglist])};
 	
-	arglist = expression comma_exp*;
-	comma_exp = comma expression;
+	arglist = expression comma_exp* {->New arglist(expression,[comma_exp])};
+	comma_exp = comma expression {->New comma_exp(expression)};
 	
-	value = {method} id dot function_call |
-		    {num} number | 
-			{string} string |
-			{none} none;
+	value = {method} id dot function_call {->New value.methon(id,function_call)}|
+		    {num} number {->New value.num(number)}| 
+			{string} string {->New value.string(string)}|
+			{none} none {->New value.none()};
 	
 
 	
@@ -157,12 +157,12 @@ Abstract Syntax Tree
 				{assert} expression comma_exp* |
 				{func} function_call;
 
-	expression = {minus} [L]:expression [R]:expression | 
-				 {add} [L]:expression [R]:expression|
-				 {mod} [L]:expression [R]:expression|
-				 {div} [L]:expression [R]:expression|
-				 {mult} [L]:expression [R]:expression|
-				 {multmult} [L]:expression [R]:expression|
+	expression = {minus} [lpar]:expression [rpar]:expression | 
+				 {add} [lpar]:expression [rpar]:expression|
+				 {mod} [lpar]:expression [rpar]:expression|
+				 {div} [lpar]:expression [rpar]:expression|
+				 {mult} [lpar]:expression [rpar]:expression|
+				 {multmult} [lpar]:expression [rpar]:expression|
 				 {sth} something |
 				 {listexp} id expression|
 				 {open} [lpar]:expression [rpar]:expression|
@@ -178,17 +178,17 @@ Abstract Syntax Tree
 	comma_v = value;
 				
 				
-	comparison_or = {or} [L]:comparison_or [R]:comparison_or|
-					{and} [L]:comparison_or [R]:comparison_or|
+	comparison_or = {or} [lpar]:comparison_or [rpar]:comparison_or|
+					{and} [lpar]:comparison_or [rpar]:comparison_or|
 					{not} comparison_or|
 					{true} |
 					{false} |
-					{less} [L]:expression [R]:expression|
-					{great} [L]:expression [R]:expression|
-					{geq} [L]:expression [R]:expression|
-					{leq} [L]:expression [R]:expression|
-					{neq} [L]:expression [R]:expression|
-					{eq} [L]:expression [R]:expression;			
+					{less} [lpar]:expression [rpar]:expression|
+					{great} [lpar]:expression [rpar]:expression|
+					{geq} [lpar]:expression [rpar]:expression|
+					{leq} [lpar]:expression [rpar]:expression|
+					{neq} [lpar]:expression [rpar]:expression|
+					{eq} [lpar]:expression [rpar]:expression;			
 
 					
 	function_call = id arglist*;
