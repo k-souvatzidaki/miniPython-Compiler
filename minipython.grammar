@@ -133,7 +133,70 @@ Productions
 			{string} string |
 			{none} none;
 	
-	num = number;
+
 	
-	ident = id;
+Abstract Syntax Tree
+	goal = commands*;
+	commands = {fun} function | 
+	           {stat} statement;
 	
+	function = id argument* statement;
+	argument = id assign_v* comma_assign*;
+	comma_assign = id assign_v* ;
+	assign_v = value;
+	
+	statement = {if} comparison_or statement |
+			    {while} comparison_or statement |
+				{for} [forid]:id [inid]:id statement |
+				{return} expression |
+				{print} expression comma_exp* |
+				{assign} id expression |
+				{assignmin} id expression |
+				{assigndiv} id expression |
+				{list} id [lbr]:expression [rbr]:expression |
+				{assert} expression comma_exp* |
+				{func} function_call;
+
+	expression = {minus} [L]:expression [R]:expression | 
+				 {add} [L]:expression [R]:expression|
+				 {mod} [L]:expression [R]:expression|
+				 {div} [L]:expression [R]:expression|
+				 {mult} [L]:expression [R]:expression|
+				 {multmult} [L]:expression [R]:expression|
+				 {sth} something |
+				 {listexp} id expression|
+				 {open} [lpar]:expression [rpar]:expression|
+				 {list_con} expression comma_exp*;
+				 
+	something = {func_call} function_call|
+				{value} value|
+				{id} id| 			
+				{type} id|
+				{max} value comma_v*|
+				{min} value comma_v*|
+				{par} expression;
+	comma_v = value;
+				
+				
+	comparison_or = {or} [L]:comparison_or [R]:comparison_or|
+					{and} [L]:comparison_or [R]:comparison_or|
+					{not} comparison_or|
+					{true} |
+					{false} |
+					{less} [L]:expression [R]:expression|
+					{great} [L]:expression [R]:expression|
+					{geq} [L]:expression [R]:expression|
+					{leq} [L]:expression [R]:expression|
+					{neq} [L]:expression [R]:expression|
+					{eq} [L]:expression [R]:expression;			
+
+					
+	function_call = id arglist*;
+	
+	arglist = expression comma_exp*;
+	comma_exp = expression;
+	
+	value = {method} id function_call |
+		    {num} number | 
+			{string} string |
+			{none} ;
