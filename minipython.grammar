@@ -61,7 +61,7 @@ Ignored Tokens
 	blank, line_comment;
 
 Productions
-	goal = commands*{-> New goal( [commands] ) };
+	goal = commands*{-> New goal([commands])};
 	
 	commands = {fun} function{-> New commands.fun(function)} | 
 	           {stat} statement{-> New commands.stat(statement)} ;
@@ -91,26 +91,26 @@ Productions
 					 {mod} expression_multmult mod expression_mod{->New expression.mod(expression_multmult.expression,expression_mod.expression)} |
 					 {div} expression_multmult div expression_mod{->New expression.div(expression_multmult.expression,expression_mod.expression)} |
 					 {mult} expression_multmult mult expression_mod{->New expression.mult(expression_multmult.expression,expression_mod.expression)};	  
-	expression_multmult{->expression} = {expr} expr{->expression}|
+	expression_multmult{->expression} = {expr} expr{->expr.expression}|
 						  {multmult} expr multmult expression_multmult{->New expression.multmult(expr.expression,expression_multmult.expression)};
-	expr{->expression} = {sth} something{->something} |
-		   {listexp} id l_br expression r_br{->New expression.listexp(id,expression)}|
-		   {open} open l_par [lpar]:expression comma [rpar]:expression r_par{->New expression.open(lpar,rpar)}|
-		   {list_con} l_br expression comma_exp* r_br{->New expression.list_con(expression,[comma_expression])};
-	something = {func_call} function_call{->New something.func_call(function_call)}|
-				{value} value{->New something.value(value)}|
-				{id} id{->New something.id(id)}| 			
-				{type} type l_par id r_par{->New something.type(id)}|
-				{max} max l_par value comma_v+ r_par{->New something.max(value,[comma_v])}|
-				{min} min l_par value comma_v+ r_par{->New something.min(value,[comma_v])}|
-				{par} l_par expression r_par{->New something.par(expression)};
+	expr{->expression} = {sth} something{->something.expression} |
+						 {listexp} id l_br expression r_br{->New expression.listexp(id,expression)}|
+						 {open} open l_par [lpar]:expression comma [rpar]:expression r_par{->New expression.open(lpar,rpar)}|
+						 {list_con} l_br expression comma_exp* r_br{->New expression.list_con(expression,[comma_exp])};
+	something{->expression} = {func_call} function_call{->New expression.func_call(function_call)}|
+				              {value} value{->New expression.value(value)}|
+				              {id} id{->New expression.id(id)}| 			
+				              {type} type l_par id r_par{->New expression.type(id)}|
+				              {max} max l_par value comma_v+ r_par{->New expression.max(value,[comma_v])}|
+				              {min} min l_par value comma_v+ r_par{->New expression.min(value,[comma_v])}|
+				              {par} l_par expression r_par{->New expression.par(expression)};
 	comma_v = comma value{->New comma_v(value)};
 	
 	
 	comparison_or = {comp} comparison_and {-> comparison_and.comparison_or} |
 					{or} comparison_or or comparison_and {->New comparison_or.or(comparison_or,comparison_and.comparison_or)};
-	comparison_and{->comparison_or} = {not_comp} not_comp {-> comp_not.comparison_or}|
-					 {and} comparison_and and not_comp{->New comparison_and.and(comparison_and.comparison_or,comp_not.comparison_or)};
+	comparison_and{->comparison_or} = {not_comp} not_comp {-> not_comp.comparison_or}|
+					 {and} comparison_and and not_comp{->New comparison_or.and(comparison_and.comparison_or,not_comp.comparison_or)};
 	not_comp{->comparison_or} = {comp} comp {-> comp.comparison_or}|
 			   {not} not not_comp{->New comparison_or.not(not_comp.comparison_or)};
 	comp{->comparison_or} = {true} true{->New comparison_or.true()}|
@@ -128,7 +128,7 @@ Productions
 	arglist = expression comma_exp* {->New arglist(expression,[comma_exp])};
 	comma_exp = comma expression {->New comma_exp(expression)};
 	
-	value = {method} id dot function_call {->New value.methon(id,function_call)}|
+	value = {method} id dot function_call {->New value.method(id,function_call)}|
 		    {num} number {->New value.num(number)}| 
 			{string} string {->New value.string(string)}|
 			{none} none {->New value.none()};
@@ -163,18 +163,17 @@ Abstract Syntax Tree
 				 {div} [lpar]:expression [rpar]:expression|
 				 {mult} [lpar]:expression [rpar]:expression|
 				 {multmult} [lpar]:expression [rpar]:expression|
-				 {sth} something |
+				 {func_call} function_call|
+				 {value} value|
+				 {id} id| 			
+				 {type} id|
+				 {max} value comma_v*|
+				 {min} value comma_v*|
+				 {par} expression |
 				 {listexp} id expression|
 				 {open} [lpar]:expression [rpar]:expression|
 				 {list_con} expression comma_exp*;
 				 
-	something = {func_call} function_call|
-				{value} value|
-				{id} id| 			
-				{type} id|
-				{max} value comma_v*|
-				{min} value comma_v*|
-				{par} expression;
 	comma_v = value;
 				
 				
