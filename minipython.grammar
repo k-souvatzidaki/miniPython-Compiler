@@ -64,7 +64,7 @@ Productions
 	goal = commands*{-> New goal([commands])};
 	
 	commands = {fun} function{-> New commands.fun(function)} | 
-	           {stat} statement{-> New commands.stat(statement)} ;
+	           {stat} statement{-> New commands.stat(statement)};
 			   
 	function = def id l_par argument? r_par semi statement{-> New function(id,[argument],statement)};
 	argument = id assign_v? comma_assign*{-> New argument(id,[assign_v],[comma_assign])};
