@@ -36,6 +36,7 @@ public class Visitor extends DepthFirstAdapter {
 		}
 	}
 	
+	//TODO - check for duplicate argument ids in the same function
 	@Override
 	public void inAArgument(AArgument node) {
 		String fName = node.getId().toString();
@@ -87,7 +88,7 @@ public class Visitor extends DepthFirstAdapter {
 		else if (!symtable.get(fname) instanceof ACommaAssign ) symtable.put(fname,node);  //!!!!!!!!!!!!!!!
 	}
 	
-	@Override
+	/*@Override
 	public void inAAssignminStatement(AAssignminStatement node) {
         defaultIn(node);
 	}
@@ -95,13 +96,15 @@ public class Visitor extends DepthFirstAdapter {
 	@Override
 	public void inAAssigndivStatement(AAssigndivStatement node) {
         defaultIn(node);
-	}
+	} */
 	
 	@Override
 	public void inAListStatement(AListStatement node) {
-        defaultIn(node);
+        String fName = node.getId().toString();
+		if(!symtable.contains(fname)) symtable.put(fname,node);
 	}
 	
+	/*
 	@Override
 	public void inAAssertStatement(AAssertStatement node) {
         defaultIn(node);
@@ -111,7 +114,9 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAFuncStatement(AFuncStatement node) {
         defaultIn(node);
 	}
+	*/
 	
+	/*
 	@Override
 	public void inAExprModExpression(AExprModExpression node) {
         defaultIn(node);
@@ -156,6 +161,7 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAMultmultExpressionMultmult(AMultmultExpressionMultmult node) {
         defaultIn(node);
 	}
+	
 	
 	@Override
 	public void inASthExpr(ASthExpr node) {
@@ -216,7 +222,9 @@ public class Visitor extends DepthFirstAdapter {
 	public void inACommaV(ACommaV node) {
         defaultIn(node);
 	}
-	
+	*/
+
+	/*
 	@Override
 	public void inACompComparisonOr(ACompComparisonOr node) {
         defaultIn(node);
@@ -287,8 +295,9 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAEqComp(AEqComp node) {
         defaultIn(node);
 	}
-	
+	*/
 
+	/*
 	@Override
 	public void inAFunctionCall(AFunctionCall node) {
         defaultIn(node);
@@ -333,5 +342,6 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAIdent(AIdent node) {
         defaultIn(node);
 	}
+	*/
 
 }
