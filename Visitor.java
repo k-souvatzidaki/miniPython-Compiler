@@ -4,7 +4,8 @@ import java.util.*;
 
 public class Visitor extends DepthFirstAdapter {
 
-	private Hashtable symtable;	
+	private Hashtable <String,ArrayList<Node>> symtable;	
+	/*x, argument, argument, def name, list */
 
 	Visitor(Hashtable symtable) {
 		this.symtable = symtable;
@@ -27,26 +28,68 @@ public class Visitor extends DepthFirstAdapter {
 	@Override
 	public void inAFunction(AFunction node) {
 
-        String fName = node.getId().toString();
-	 	int line = ((TId) node.getId()).getLine();
-	 	if (symtable.containsKey(fName)) {
-	 		System.out.println("Line " + line + ": " +" Function " + fName +" is already defined");
-	 	}else {
-	 		symtable.put(fName, node);
+		System.out.println("Inside inAFunction");
+
+        String function_name = node.getId().toString();
+		int line = ((TId) node.getId()).getLine();
+		System.out.println(line);
+
+		if(!symtable.containsKey(function_name)) symtable.put(function_name,new ArrayList<Node>(Arrays.asList(node)));
+		else{
+			//TODO get number of arguments and print error ONLY if same name with same # of args
+			ArrayList<Node> temp = symtable.get(function_name);
+			for(Node n : temp) {
+				if(n instanceof AFunction){
+					System.out.println("Line " + line + ": " +" Function " + function_name +" is already defined");
+					break;
+				}
+			}
 		}
+	 	
 	}
 	
 	//TODO - check for duplicate argument ids in the same function
 	@Override
 	public void inAArgument(AArgument node) {
-		String fName = node.getId().toString();
-		if(!symtable.contains(fname)) symtable.put(fname,node);
+
+		System.out.println("Inside inAArgument");
+
+
+		String arg_name = node.getId().toString();
+		//the first argument is never a duplicate
+		if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
+		else symtable.get(arg_name).add(node);
+		//the rest of the arguments are "CommaAssign"s, checked in "inACommaAssign(..)"
 	}
 	
 	@Override
 	public void inACommaAssign(ACommaAssign node) {
-		String fName = node.getId().toString();
-		if(!symtable.contains(fname)) symtable.put(fname,node);
+
+		System.out.println("Inside inACommaAssign");
+
+		String arg_name = node.getId().toString(); //get name of the argument
+		String function_name = ((AFunction)(node.parent().parent())).getId().toString(); //get name of the function
+		int line = ((TId) node.getId()).getLine();
+		//if no symbol with the same name exists
+		if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
+		else {
+			//if symbol with the same name exists 
+			ArrayList<Node> temp = symtable.get(arg_name);
+			for(Node n : temp) {
+				if (!(n instanceof ACommaAssign)) {
+					if(!(n instanceof AArgument)) symtable.get(arg_name).add(node);
+					else {
+						String n_function = ((AFunction)(node.parent())).getId().toString();
+						if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
+						else System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+					}
+				}else{
+					String n_function = ((AFunction)(node.parent().parent())).getId().toString();
+					if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
+					else System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+				}
+			}
+		}
 	}
 	
 	/* @Override
@@ -82,10 +125,15 @@ public class Visitor extends DepthFirstAdapter {
 	
 	@Override
 	public void inAAssignStatement(AAssignStatement node) {
-		String fName = node.getId().toString();
-		// 2 symbol tables???
-		if(!symtable.contains(fname)) symtable.put(fname,node);
+		String var_name = node.getId().toString();
+		
+		if(!symtable.containsKey(var_name)) symtable.put(var_name,new ArrayList<Node>(Arrays.asList(node)));
+		else symtable.get(var_name).add(node);
+
+		/*
+		if(!symtable.contains(var_name)) symtable.put(var_name,node);
 		else if (!symtable.get(fname) instanceof ACommaAssign ) symtable.put(fname,node);  //!!!!!!!!!!!!!!!
+		*/
 	}
 	
 	/*@Override
@@ -100,8 +148,13 @@ public class Visitor extends DepthFirstAdapter {
 	
 	@Override
 	public void inAListStatement(AListStatement node) {
-        String fName = node.getId().toString();
-		if(!symtable.contains(fname)) symtable.put(fname,node);
+		String list_name = node.getId().toString();
+		
+		if(!symtable.containsKey(list_name)) symtable.put(list_name,new ArrayList<Node>(Arrays.asList(node)));
+		else symtable.get(list_name).add(node);
+
+
+		//if(!symtable.contains(fname)) symtable.put(fname,node);
 	}
 	
 	/*
