@@ -48,7 +48,7 @@ public class Visitor extends DepthFirstAdapter {
 	 	
 	}
 	
-	//TODO - check for duplicate argument ids in the same function
+	//TODO different functions with same arguments doesn't work 
 	@Override
 	public void inAArgument(AArgument node) {
 
@@ -75,18 +75,26 @@ public class Visitor extends DepthFirstAdapter {
 		else {
 			//if symbol with the same name exists 
 			ArrayList<Node> temp = symtable.get(arg_name);
-			for(Node n : temp) {
+			System.out.println(temp.getClass());
+			for(int i =0; i < temp.size(); i++) {
+				Node n = temp.get(i);
 				if (!(n instanceof ACommaAssign)) {
 					if(!(n instanceof AArgument)) symtable.get(arg_name).add(node);
 					else {
-						String n_function = ((AFunction)(node.parent())).getId().toString();
+						String n_function = ((AFunction)(n.parent())).getId().toString();
 						if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
-						else System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+						else {
+							System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+							break;
+						}
 					}
 				}else{
-					String n_function = ((AFunction)(node.parent().parent())).getId().toString();
+					String n_function = ((AFunction)(n.parent().parent())).getId().toString();
 					if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
-					else System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+					else{
+						System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+						break;
+					}
 				}
 			}
 		}
