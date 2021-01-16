@@ -25,10 +25,10 @@ public class Visitor extends DepthFirstAdapter {
 	// }
 
 	
-	@Override
+	/*@Override
 	public void inAFunction(AFunction node) {
 
-		System.out.println("Inside inAFunction");
+		System.out.println("\nInside inAFunction");
 
         String function_name = node.getId().toString();
 		int line = ((TId) node.getId()).getLine();
@@ -46,8 +46,54 @@ public class Visitor extends DepthFirstAdapter {
 			}
 		}
 	 	
-	}
+	}*/
 	
+	@Override
+	public void caseAFunction(AFunction node) {
+        inAFunction(node);
+        if(node.getId() != null) {
+            node.getId().apply(this);
+        }
+        {
+			Object temp[] = node.getArgument().toArray();
+
+			String function_name = node.getId().toString();
+			int line = ((TId) node.getId()).getLine();
+			ArrayList<Node> temp1 = symtable.get(function_name);
+			boolean flag = true;
+			if (temp1 != null) {
+				for(Node n : temp1) {
+					if(n instanceof AFunction){
+						int size_n=0;
+						if (((AFunction) n).getArgument().size() == 1) {
+							size_n = 1 + ((AArgument) ((AFunction) n).getArgument().get(0)).getCommaAssign().size();
+						}
+						int size_node=0;
+						if (((AFunction) node).getArgument().size() == 1) {
+							size_node = 1 + ((AArgument) ((AFunction) node).getArgument().get(0)).getCommaAssign().size();
+						}
+						if (size_n == size_node){
+							System.out.println("Line " + line + ": " +" Function " + function_name +" is already defined");
+							flag = false;
+						}
+					}
+				}
+			}
+			if (flag){
+				symtable.put(function_name,new ArrayList<Node>(Arrays.asList(node)));
+				for(int i = 0; i < temp.length; i++) {
+					((PArgument) temp[i]).apply(this);
+				}
+				if(node.getStatement() != null) {
+					node.getStatement().apply(this);
+				}
+			}
+		}
+		
+		
+        outAFunction(node);
+    }
+
 	//TODO different functions with same arguments doesn't work 
 	@Override
 	public void inAArgument(AArgument node) {
@@ -67,21 +113,50 @@ public class Visitor extends DepthFirstAdapter {
 
 		System.out.println("Inside inACommaAssign");
 
+
 		String arg_name = node.getId().toString(); //get name of the argument
 		String function_name = ((AFunction)(node.parent().parent())).getId().toString(); //get name of the function
 		int line = ((TId) node.getId()).getLine();
 		//if no symbol with the same name exists
 		if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
 		else {
-			//if symbol with the same name exists 
+
+			//get all the symbols with the same name 
 			ArrayList<Node> temp = symtable.get(arg_name);
-			System.out.println(temp.getClass());
+			//check if a symbol with type AArgument or ACommaAssign with the same name exists
+			boolean flag = true;
 			for(int i =0; i < temp.size(); i++) {
 				Node n = temp.get(i);
+				if(n instanceof AArgument) {
+					String n_function = ((AFunction)(n.parent())).getId().toString();
+					System.out.println("Parent of AArgument = "+ n_function);
+					if(n_function.equals(function_name)) {
+						System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+						flag = false;
+					}
+				} else if(n instanceof ACommaAssign) {
+					String n_function = ((AFunction)(n.parent().parent())).getId().toString();
+					System.out.println("Parent of ACommaAssign = "+ n_function);
+					if(n_function.equals(function_name)) {
+						System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
+						flag = false;
+					}
+				}
+			}
+			if(flag == true) symtable.get(arg_name).add(node);
+
+
+			/*
+			//if symbol with the same name exists 
+			ArrayList<Node> temp = symtable.get(arg_name);
+			for(int i =0; i < temp.size(); i++) {
+				Node n = temp.get(i);
+				System.out.println("CLASS "+n.getClass());
 				if (!(n instanceof ACommaAssign)) {
 					if(!(n instanceof AArgument)) symtable.get(arg_name).add(node);
 					else {
 						String n_function = ((AFunction)(n.parent())).getId().toString();
+						System.out.println("FUNCTION "+n_function);
 						if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
 						else {
 							System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
@@ -90,13 +165,16 @@ public class Visitor extends DepthFirstAdapter {
 					}
 				}else{
 					String n_function = ((AFunction)(n.parent().parent())).getId().toString();
+					System.out.println("COMMAASSIGN, in FUNCTION "+n_function);
 					if(!n_function.equals(function_name)) symtable.get(arg_name).add(node);
 					else{
+						System.out.println(function_name + " "+n_function);
 						System.out.println("Line " + line + ": " +"Duplicate argument " + arg_name +" in function "+function_name);
 						break;
 					}
 				}
 			}
+			*/
 		}
 	}
 	
