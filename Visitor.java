@@ -6,10 +6,13 @@ public class Visitor extends DepthFirstAdapter {
 
 	private Hashtable <String,ArrayList<Node>> symtable;	
 	static int errors;
+	boolean in_function; boolean arguments_ok;
+	String in_function_name;
 
 	Visitor(Hashtable symtable) {
 		this.symtable = symtable;
 		errors = 0;
+		in_function = false;
 	}
 	
 	@Override
@@ -71,13 +74,17 @@ public class Visitor extends DepthFirstAdapter {
 				if(!symtable.containsKey(function_name)) symtable.put(function_name,new ArrayList<Node>(Arrays.asList(node)));
 				else symtable.get(function_name).add(node);
 				//proceed to check arguments
+				arguments_ok = false;
 				for(int i = 0; i < temp.length; i++) {
 					((PArgument) temp[i]).apply(this);
 				}
 				//proceed to check statement
-				if(node.getStatement() != null) {
+				in_function = true;
+				in_function_name = function_name;
+				if(arguments_ok && node.getStatement() != null) {
 					node.getStatement().apply(this);
 				}
+				in_function = false;
 			}
 		}
         outAFunction(node);
@@ -118,6 +125,7 @@ public class Visitor extends DepthFirstAdapter {
 		
 			//if no duplicates, add arguments in symbol table, else print error
 			if(flag) {
+				arguments_ok = true;
 				//add first argument in symbol table
 				if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
 				else symtable.get(arg_name).add(node);
@@ -151,14 +159,80 @@ public class Visitor extends DepthFirstAdapter {
 		else symtable.get(var_name).add(node);
 	}
 	
-	/*@Override  // list[a] = 
+
+	//check if used identifiers are defined
+	@Override
+	public void inAIdExpression(AIdExpression node) {
+		int line = ((TId) node.getId()).getLine();
+		String id = node.getId().toString();
+		if(!nameExists(id)) {
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			errors++;
+		}		
+	}
+	
+	@Override
+	public void inATypeExpression(ATypeExpression node) {
+        int line = ((TId) node.getId()).getLine();
+		String id = node.getId().toString();
+		if(!nameExists(id)) {
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			errors++;
+		}
+	}
+	
+	@Override
+	public void inAAssignminStatement(AAssignminStatement node) {
+        int line = ((TId) node.getId()).getLine();
+		String id = node.getId().toString();
+		if(!nameExists(id)) {
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			errors++;
+		}
+	}
+	
+	@Override
+	public void inAAssigndivStatement(AAssigndivStatement node) {
+        int line = ((TId) node.getId()).getLine();
+		String id = node.getId().toString();
+		if(!nameExists(id)) {
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			errors++;
+		}
+	}
+	
+	@Override
 	public void inAListStatement(AListStatement node) {
-		String list_name = node.getId().toString();
-		
-		if(!symtable.containsKey(list_name)) symtable.put(list_name,new ArrayList<Node>(Arrays.asList(node)));
-		else symtable.get(list_name).add(node);
+        int line = ((TId) node.getId()).getLine();
+		String id = node.getId().toString();
+		if(!nameExists(id)) {
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			errors++;
+		}
+	}
+	
+	@Override
+	public void inAForStatement(AForStatement node) {
+         defaultIn(node);
+	}
 
+	//check if a name exists in the hashtable
+	private boolean nameExists(String id) {
+		if(symtable.containsKey(id)) {
+			ArrayList<Node> values = symtable.get(id);
+			for(int i = 0; i < values.size(); i++) {
+				if(values.get(i) instanceof AAssignStatement) return true;
+				if(in_function) {
+					if(values.get(i) instanceof AArgument) {
+						if(((AFunction)((AArgument)values.get(i)).parent()).getId().toString().equals(in_function_name)) return true;
+					}else if(values.get(i) instanceof ACommaAssign) {
+						if(((AFunction)((ACommaAssign)values.get(i)).parent().parent()).getId().toString().equals(in_function_name)) return true;
+					}
+				}
+			}
+			return false;
+		}
+		return false;
+	}
 
-		//if(!symtable.contains(fname)) symtable.put(fname,node);
-	}*/
 }
