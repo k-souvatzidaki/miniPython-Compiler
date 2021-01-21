@@ -156,7 +156,20 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAAssignStatement(AAssignStatement node) {
 		String var_name = node.getId().toString();
 		if(!symtable.containsKey(var_name)) symtable.put(var_name,new ArrayList<Node>(Arrays.asList(node)));
-		else symtable.get(var_name).add(node);
+		else {
+			ArrayList<Node> nodes = symtable.get(var_name);
+			boolean inserted = false;
+			for(int i =0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement) {
+					nodes.remove(i);
+					nodes.add(node);
+					symtable.replace(var_name, nodes);
+					inserted = true;
+					break;
+				}
+			}
+			if(!inserted) symtable.get(var_name).add(node);
+		} 
 	}
 	
 
@@ -249,13 +262,6 @@ public class Visitor extends DepthFirstAdapter {
 		}
 		if(in_function) {
 			if(arguments.contains(id)) return true;
-			/*
-			if(values.get(i) instanceof AArgument) {
-				if(((AFunction)((AArgument)values.get(i)).parent()).getId().toString().equals(in_function_name)) return true;
-			}else if(values.get(i) instanceof ACommaAssign) {
-				if(((AFunction)((ACommaAssign)values.get(i)).parent().parent()).getId().toString().equals(in_function_name)) return true;
-			}
-			*/
 		}
 		if(in_for) {
 			if(id.equals(in_for_name)) return true;
@@ -263,5 +269,7 @@ public class Visitor extends DepthFirstAdapter {
 		}
 		return false;
 	}
+
+
 
 }
