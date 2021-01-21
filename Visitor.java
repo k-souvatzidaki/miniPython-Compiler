@@ -6,13 +6,15 @@ public class Visitor extends DepthFirstAdapter {
 
 	private Hashtable <String,ArrayList<Node>> symtable;	
 	static int errors;
-	boolean in_function; boolean arguments_ok;
-	String in_function_name;
+	boolean in_function; boolean arguments_ok; boolean in_for;
+	String in_function_name; String in_for_name;
+	ArrayList<String> arguments;
 
 	Visitor(Hashtable symtable) {
 		this.symtable = symtable;
 		errors = 0;
 		in_function = false;
+		in_for = false;
 	}
 	
 	@Override
@@ -73,19 +75,18 @@ public class Visitor extends DepthFirstAdapter {
 				//add function in table
 				if(!symtable.containsKey(function_name)) symtable.put(function_name,new ArrayList<Node>(Arrays.asList(node)));
 				else symtable.get(function_name).add(node);
-				//proceed to check arguments
-				arguments_ok = false;
-				for(int i = 0; i < temp.length; i++) {
-					((PArgument) temp[i]).apply(this);
-				}
-				//proceed to check statement
-				in_function = true;
-				in_function_name = function_name;
-				if(arguments_ok && node.getStatement() != null) {
-					node.getStatement().apply(this);
-				}
-				in_function = false;
 			}
+			//proceed to check arguments
+			for(int i = 0; i < temp.length; i++) {
+				((PArgument) temp[i]).apply(this);
+			}
+			//proceed to check statement
+			in_function = true;
+			in_function_name = function_name;
+			if(node.getStatement() != null) {
+				node.getStatement().apply(this);
+			}
+			in_function = false;
 		}
         outAFunction(node);
     }
@@ -105,7 +106,7 @@ public class Visitor extends DepthFirstAdapter {
 		{
 			//check for duplicate argument names in the same function
 			String arg_name = node.getId().toString();
-			ArrayList<String> arguments = new ArrayList<String>(Arrays.asList(arg_name));
+			arguments = new ArrayList<String>(Arrays.asList(arg_name));
 			Object temp[] = node.getCommaAssign().toArray();
 			boolean flag = true;
 			int line = ((TId) node.getId()).getLine();
@@ -115,7 +116,7 @@ public class Visitor extends DepthFirstAdapter {
 				int size = arguments.size();
 				for(int k = 0; k < size; k++) {
 					if(arguments.get(k).equals(temp_id)) {
-						System.out.println("Line " + line + ": " +"Duplicate argument " + temp_id +" in function "+function_name);
+						System.out.println("Line " + line + ": " + "Duplicate argument " + temp_id + " in function "+function_name);
 						flag = false;
 						errors++;
 						break;
@@ -124,8 +125,7 @@ public class Visitor extends DepthFirstAdapter {
 			}
 		
 			//if no duplicates, add arguments in symbol table, else print error
-			if(flag) {
-				arguments_ok = true;
+			//if(flag) {
 				//add first argument in symbol table
 				if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
 				else symtable.get(arg_name).add(node);
@@ -133,7 +133,7 @@ public class Visitor extends DepthFirstAdapter {
 				for(int i = 0; i < temp.length; i++) {
 					((PCommaAssign) temp[i]).apply(this);
 				}
-			}
+			//}
 		}
         outAArgument(node);
     }
@@ -210,11 +210,33 @@ public class Visitor extends DepthFirstAdapter {
 			errors++;
 		}
 	}
-	
+
 	@Override
-	public void inAForStatement(AForStatement node) {
-         defaultIn(node);
-	}
+	public void caseAForStatement(AForStatement node) {
+        inAForStatement(node);
+        if(node.getForid() != null) {
+            node.getForid().apply(this);
+		}
+		String forId = node.getForid().toString();
+		if(!symtable.containsKey(forId)) symtable.put(forId,new ArrayList<Node>(Arrays.asList(node)));
+		else symtable.get(forId).add(node);
+        if(node.getInid() != null) {
+            node.getInid().apply(this);
+		}
+		if (!symtable.containsKey(node.getInid().toString())) {
+			int line = ((TId) node.getInid()).getLine();
+			System.out.println("Line " + line + ": " + "Name " + node.getInid().toString() +" is not defined");
+			errors++;
+		}
+		in_for = true;
+		in_for_name = forId;
+        if(node.getStatement() != null) {
+			node.getStatement().apply(this);
+		}
+		in_for = false;
+		
+        outAForStatement(node);
+    }
 
 	//check if a name exists in the hashtable
 	private boolean nameExists(String id) {
@@ -222,15 +244,22 @@ public class Visitor extends DepthFirstAdapter {
 			ArrayList<Node> values = symtable.get(id);
 			for(int i = 0; i < values.size(); i++) {
 				if(values.get(i) instanceof AAssignStatement) return true;
-				if(in_function) {
-					if(values.get(i) instanceof AArgument) {
-						if(((AFunction)((AArgument)values.get(i)).parent()).getId().toString().equals(in_function_name)) return true;
-					}else if(values.get(i) instanceof ACommaAssign) {
-						if(((AFunction)((ACommaAssign)values.get(i)).parent().parent()).getId().toString().equals(in_function_name)) return true;
-					}
-				}
+				
 			}
-			return false;
+		}
+		if(in_function) {
+			if(arguments.contains(id)) return true;
+			/*
+			if(values.get(i) instanceof AArgument) {
+				if(((AFunction)((AArgument)values.get(i)).parent()).getId().toString().equals(in_function_name)) return true;
+			}else if(values.get(i) instanceof ACommaAssign) {
+				if(((AFunction)((ACommaAssign)values.get(i)).parent().parent()).getId().toString().equals(in_function_name)) return true;
+			}
+			*/
+		}
+		if(in_for) {
+			if(id.equals(in_for_name)) return true;
+			else return false;
 		}
 		return false;
 	}
