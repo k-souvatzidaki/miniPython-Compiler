@@ -7,7 +7,7 @@ public class Visitor extends DepthFirstAdapter {
 	private Hashtable <String,ArrayList<Node>> symtable;	
 	static int errors;
 	boolean in_function; boolean arguments_ok; boolean in_for;
-	String in_function_name; String in_for_name;
+	String in_function_name; String in_for_name; Node fun;
 	ArrayList<String> arguments;
 
 	Visitor(Hashtable symtable) {
@@ -84,12 +84,16 @@ public class Visitor extends DepthFirstAdapter {
 			in_function = true;
 			in_function_name = function_name;
 			if(node.getStatement() != null) {
+				//to check if  there is a return statement in the function's statements
+				fun = node;
 				node.getStatement().apply(this);
 			}
 			in_function = false;
 		}
         outAFunction(node);
-    }
+	}
+	
+	
 
 
 	public void caseAArgument(AArgument node) {

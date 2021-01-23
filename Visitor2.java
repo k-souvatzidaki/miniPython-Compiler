@@ -5,7 +5,8 @@ import java.util.*;
 public class Visitor2 extends DepthFirstAdapter {
 
 	private Hashtable <String,ArrayList<Node>> symtable;	
-	int errors;
+	int errors; Node fun;
+	String return_type;
 
 	Visitor2(Hashtable symtable) {
 		this.symtable = symtable;
@@ -18,7 +19,9 @@ public class Visitor2 extends DepthFirstAdapter {
         inAFunctionCall(node);
         if(node.getId() != null) {
             node.getId().apply(this);
-        }
+		} 
+		fun = null;
+		return_type = null;
         {
 			//get id
 			String id = node.getId().toString();
@@ -54,8 +57,12 @@ public class Visitor2 extends DepthFirstAdapter {
 								default_n_params += ((ACommaAssign) v).getAssignV().size();
 							}
 						}
-						if(params >= default_n_params && params <= n_params) enough_args = true;
-
+						if((default_n_params==0 && params==n_params) 
+						|| (params >= n_params-default_n_params && n_params >= params)) {
+							enough_args = true;
+							fun = ((AFunction)nodes.get(i));
+							break;
+						}
 					} 
 				}
 				
@@ -66,13 +73,15 @@ public class Visitor2 extends DepthFirstAdapter {
 				if(!enough_args)
 					System.out.println("Line " + line + ": " +"Function " + id +" with "+params+" arguments is not defined");
 					errors++;
-				}	
+				}
 			}
             Object temp[] = node.getArglist().toArray();
             for(int i = 0; i < temp.length; i++) {
                 ((PArglist) temp[i]).apply(this);
             }
-        
+		
+		System.out.println("THE FUNCTION ISSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"+fun);
+		if(fun!=null) ((AFunction)fun).apply(this);
         outAFunctionCall(node);
 	}
 	
@@ -90,7 +99,8 @@ public class Visitor2 extends DepthFirstAdapter {
 			System.out.println("Printing left: "+ left);
 			
 			if(!(left instanceof AAddExpression || left instanceof AMinExpression || left instanceof AMultExpression 
-			    || left instanceof AMultmultExpression || left instanceof AModExpression || left instanceof ADivExpression)) {
+				|| left instanceof AMultmultExpression || left instanceof AModExpression || left instanceof ADivExpression 
+				|| left instanceof AParExpression)) {
 
 				System.out.println(left);
 				if(left instanceof ATypeExpression) {
@@ -107,7 +117,7 @@ public class Visitor2 extends DepthFirstAdapter {
 					}
 
 				}else if(left instanceof AIdExpression) {
-					System.out.println("HERE");
+					//System.out.println("HERE");
 					String id = ((AIdExpression)left).getId().toString();
 					ArrayList<Node> nodes = symtable.get(id);
 					AAssignStatement n = null;
@@ -116,10 +126,13 @@ public class Visitor2 extends DepthFirstAdapter {
 					System.out.println("Variable "+((AIdExpression)left).getId()+" in line "+line);
 					
 					for(int i = 0; i < nodes.size(); i++) {
-						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-						System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
-						if(other_line > line) break;
-						else n = (AAssignStatement)nodes.get(i);
+						if(nodes.get(i) instanceof AAssignStatement) {
+							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+							System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+							if(other_line > line) break;
+							else n = (AAssignStatement)nodes.get(i);
+						}
+						
 					}
 					System.out.println(n);
 					String type = (String)getOut(n);
@@ -133,7 +146,24 @@ public class Visitor2 extends DepthFirstAdapter {
 					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
-				
+				}else if(left instanceof AFuncCallExpression) {
+					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
+					System.out.println(return_type);
+					String type =return_type;
+					if(type==null){
+						System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+					}
+					else if(type.equals("NONE")) {
+						System.out.println("Line " + ": " +"Add operation cannot be done on None");
+					}else if(type.equals("OPEN")) { 
+						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+					}else if(type.equals("TYPE")) { 
+						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+					}else if(!type.equals("NUMBER")) {
+						System.out.println("Line " + ": " +"Add operation must be on numbers only");
+					}
+					
+				}else if(left instanceof AListexpExpression) {
 				}else if(left instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
 				}	
@@ -144,7 +174,8 @@ public class Visitor2 extends DepthFirstAdapter {
 			node.getRpar().apply(this);
 			Node right = node.getRpar();
 			if(!(right instanceof AAddExpression || right instanceof AMinExpression || right instanceof AMultExpression 
-			    || right instanceof AMultmultExpression || right instanceof AModExpression || right instanceof ADivExpression)) {
+				|| right instanceof AMultmultExpression || right instanceof AModExpression || right instanceof ADivExpression
+				|| right instanceof AParExpression)) {
 
 				System.out.println(right);
 				if(right instanceof ATypeExpression) {
@@ -181,49 +212,88 @@ public class Visitor2 extends DepthFirstAdapter {
 					}else if(type.equals("TYPE")){
 						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
 					}else if(type.equals("OPEN")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on open");
+						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
 					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
 					System.out.println(type);
-				
+				}else if(right instanceof AFuncCallExpression) {
+					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
+					System.out.println("AAAAAAAAAAAAAAAAAAAAA"+return_type);
+					String type =return_type;
+					if(type==null){
+						System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+					}
+					else if(type.equals("NONE")) {
+						System.out.println("Line " + ": " +"Add operation cannot be done on None");
+					}else if(type.equals("OPEN")) { 
+						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+					}else if(type.equals("TYPE")) { 
+						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+					}else if(!type.equals("NUMBER")) {
+						System.out.println("Line " + ": " +"Add operation must be on numbers only");
+					}	
+				}else if(right instanceof AListexpExpression) {
 				}else if(right instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
-				}	
-			}
-		}
-
-		/*
-        if(node.getRpar() != null) {
-			node.getRpar().apply(this);
-			Node right = node.getRpar();
-			if(!(right instanceof AAddExpression || right instanceof AMinExpression || right instanceof AMultExpression 
-			    || right instanceof AMultmultExpression || right instanceof AModExpression || right instanceof ADivExpression)) {
-				System.out.println(right);
-				if(right instanceof AValueExpression) {
-					if(!(((AValueExpression)right).getValue() instanceof ANumValue)) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}
-				}else if (right instanceof AIdExpression) {
-					String id = ((AIdExpression)right).getId().toString();
-					ArrayList<Node> temp = symtable.get(id);
-					for(int i = 0; i < temp.size(); i++ ) {
-						if(temp.get(i) instanceof AAssignStatement) {
-							//get type of variable
-							PExpression var_type = ((AAssignStatement)temp.get(i)).getExpression();
-							if(var_type instanceof )
-							if(var)
-							if(!(((AAssignStatement)temp.get(i)).getExpression()) )
-						}
-					}
 				}
 			}
-        } */
+		}
         outAAddExpression(node);
 	}
+
+
+	@Override
+	public void inAReturnStatement(AReturnStatement node) {
+		System.out.println("WE ARE INSIDE THE RETURN IN FUNCTION ");
+		PExpression expression = node.getExpression();
+		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
+		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
+			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
+			return_type = "NUMBER";
+		}else if(expression instanceof AValueExpression) {
+			PValue val = ((AValueExpression)expression).getValue();
+			System.out.println("In visitor "+ fun);
+			if(val instanceof ANumValue) { return_type = "NUMBER";  System.out.println("SETTING OUT FOR FUNCTION ");}
+			else if (val instanceof ANoneValue) return_type = "NONE";
+			else if (val instanceof AStringValue) return_type = "STRING";
+		}else if(expression instanceof ATypeExpression) return_type = "TYPE";
+		else if(expression instanceof AOpenExpression) return_type = "OPEN";
+		else if(expression instanceof AListConExpression) {
+			System.out.println("Line " + ": " +"Invalid Syntax");
+			errors++;
+		}else if(expression instanceof AListexpExpression ) {
+			String id = ((AListexpExpression)expression).getId().toString();
+			//if it's a global variable
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
+			int line = ((AListexpExpression)expression).getId().getLine(); int other_line;
+			for(int i = 0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement){
+					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+					System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+					if(other_line > line) break;
+					else n = (AAssignStatement)nodes.get(i);
+			}}
+			return_type = (String)getOut(n);
+			//if it's an argument in a function call
+		}
+		else if(expression instanceof AIdExpression) {
+			String id = ((AIdExpression)expression).getId().toString();
+			//if it's a global variable
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
+			int line = ((AIdExpression)expression).getId().getLine(); int other_line;
+			for(int i = 0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement){
+					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+					System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+					if(other_line > line) break;
+					else n = (AAssignStatement)nodes.get(i);
+			}}
+			return_type = (String)getOut(n);
+		}
+	}
 	
-
-
+	
 	@Override
 	public void inAAssignStatement(AAssignStatement node) {
 		//get value type and store in "out" Hashtable
