@@ -83,10 +83,12 @@ public class Visitor2 extends DepthFirstAdapter {
 	public void caseAAddExpression(AAddExpression node) {
 		inAAddExpression(node);
 
+		int other_line=0;
         if(node.getLpar() != null) {
 			node.getLpar().apply(this);
 			Node left = node.getLpar();
 			System.out.println("Printing left: "+ left);
+			
 			if(!(left instanceof AAddExpression || left instanceof AMinExpression || left instanceof AMultExpression 
 			    || left instanceof AMultmultExpression || left instanceof AModExpression || left instanceof ADivExpression)) {
 
@@ -110,13 +112,25 @@ public class Visitor2 extends DepthFirstAdapter {
 					ArrayList<Node> nodes = symtable.get(id);
 					AAssignStatement n = null;
 					System.out.println(nodes);
+					int line = ((AIdExpression)left).getId().getLine();
+					System.out.println("Variable "+((AIdExpression)left).getId()+" in line "+line);
+					
 					for(int i = 0; i < nodes.size(); i++) {
-						if(nodes.get(i) instanceof AAssignStatement){ n = (AAssignStatement)nodes.get(i); System.out.println("IF");}
+						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+						System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+						if(other_line > line) break;
+						else n = (AAssignStatement)nodes.get(i);
 					}
 					System.out.println(n);
 					String type = (String)getOut(n);
 					System.out.println(type);
-					if(!type.equals("NUMBER")) {
+					if(type.equals("NONE")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on None");
+					}else if(type.equals("TYPE")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+					}else if(type.equals("OPEN")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on open");
+					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
 				
@@ -151,11 +165,24 @@ public class Visitor2 extends DepthFirstAdapter {
 					String id = ((AIdExpression)right).getId().toString();
 					ArrayList<Node> nodes = symtable.get(id);
 					AAssignStatement  n = null;
+					int line = ((AIdExpression)right).getId().getLine();
+					System.out.println("Variable "+((AIdExpression)right).getId()+" in line "+line);
 					for(int i = 0; i < nodes.size(); i++) {
-						if(nodes.get(i) instanceof AAssignStatement) n = (AAssignStatement)nodes.get(i);
+						if(nodes.get(i) instanceof AAssignStatement){
+							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+							System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+							if(other_line > line) break;
+							else n = (AAssignStatement)nodes.get(i);
+						}
 					}
 					String type = (String)getOut(n);
-					if(!type.equals("NUMBER")) {
+					if(type.equals("NONE")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on None");
+					}else if(type.equals("TYPE")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+					}else if(type.equals("OPEN")){
+						System.out.println("Line " + ": " +"Add operation cannot be done on open");
+					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
 					System.out.println(type);
@@ -213,8 +240,17 @@ public class Visitor2 extends DepthFirstAdapter {
 			ArrayList<Node> nodes = symtable.get(((AIdExpression)exp).getId().toString());
 			System.out.println(nodes);
 			AAssignStatement id = null;
-			for(int i = 0; i< nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement) id = (AAssignStatement)nodes.get(i);
+
+			int line = ((AIdExpression)exp).getId().getLine();
+			System.out.println("Variable "+((AIdExpression)exp).getId()+" in line "+line);
+			int other_line;
+			for(int i = 0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement){
+					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+					System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+					if(other_line > line) break;
+					else id = (AAssignStatement)nodes.get(i);
+				}
 			}
 			type = (String)getOut(id);
 		}else if(exp instanceof AListexpExpression) {

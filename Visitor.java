@@ -16,7 +16,7 @@ public class Visitor extends DepthFirstAdapter {
 		in_function = false;
 		in_for = false;
 	}
-	
+
 	@Override
 	public void caseAFunction(AFunction node) {
 		inAFunction(node);
@@ -156,20 +156,7 @@ public class Visitor extends DepthFirstAdapter {
 	public void inAAssignStatement(AAssignStatement node) {
 		String var_name = node.getId().toString();
 		if(!symtable.containsKey(var_name)) symtable.put(var_name,new ArrayList<Node>(Arrays.asList(node)));
-		else {
-			ArrayList<Node> nodes = symtable.get(var_name);
-			boolean inserted = false;
-			for(int i =0; i < nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement) {
-					nodes.remove(i);
-					nodes.add(node);
-					symtable.replace(var_name, nodes);
-					inserted = true;
-					break;
-				}
-			}
-			if(!inserted) symtable.get(var_name).add(node);
-		} 
+		else symtable.get(var_name).add(node);
 	}
 	
 
