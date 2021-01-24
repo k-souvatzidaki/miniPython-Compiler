@@ -88,8 +88,9 @@ public class Visitor2 extends DepthFirstAdapter {
 	//ADD
 	@Override
 	public void caseAAddExpression(AAddExpression node) {
+		System.out.println("HERE");
 		inAAddExpression(node);
-		int other_line=0; String type; AAssignStatement n; ArrayList<Node> nodes; int line;
+		int other_line=0; String type = null; AAssignStatement n; ArrayList<Node> nodes; int line;
         if(node.getLpar() != null) {
 			Node left = node.getLpar();
 			if(left instanceof AFuncCallExpression) in_function = true;
@@ -110,15 +111,23 @@ public class Visitor2 extends DepthFirstAdapter {
 					}
 				}else if(left instanceof AIdExpression) {
 					String id = ((AIdExpression)left).getId().toString();
+					System.out.println("a");
 					nodes = symtable.get(id); n = null;
+					System.out.println("ou");
 					line = ((AIdExpression)left).getId().getLine();
 					for(int i = 0; i < nodes.size(); i++) {
 						if(nodes.get(i) instanceof AAssignStatement) {
 							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
 							if(other_line > line) break;
 							else n = (AAssignStatement)nodes.get(i);
-					}}
-					type = (String)getOut(n);
+							type = (String)getOut(n);
+						}else{
+							//TODO: if instanceof Argument
+							type = "ARGUMENT";
+						}
+					}
+					System.out.println(type);
+					
 					if(type.equals("NONE")){
 						System.out.println("Line " + ": " +"Add operation cannot be done on None");
 					}else if(type.equals("TYPE")){
@@ -176,9 +185,14 @@ public class Visitor2 extends DepthFirstAdapter {
 							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
 							if(other_line > line) break;
 							else n = (AAssignStatement)nodes.get(i);
+							type = (String)getOut(n);
+						}else{
+							//TODO: if instanceof Argument
+							type = "ARGUMENT";
 						}
 					}
-					type = (String)getOut(n);
+					System.out.println(type);
+					
 					if(type.equals("NONE")){
 						System.out.println("Line " + ": " +"Add operation cannot be done on None");
 					}else if(type.equals("TYPE")){
@@ -265,24 +279,45 @@ public class Visitor2 extends DepthFirstAdapter {
 
 
 	/** if a function doesn't have a return statement while looking for return type, the return type must be null*/
+
+	//TODO do the same for : assign statements, function call(statement), list assign
 	@Override
 	public void caseAPrintStatement(APrintStatement node) {
 		inAPrintStatement(node);
+		System.out.println(in_function);
+		//if (node.getExpression() instanceof AFuncCallExpression) in_function=true;
 		if(!in_function) {
+			System.out.println("NOT IN FUNCTION");
 			if(node.getExpression() != null) {
+				//in_function = true;
 				node.getExpression().apply(this);
+				if(node.getExpression() instanceof AFuncCallExpression) {
+					System.out.println("return "+return_type);
+					if(return_type == null) {
+						System.out.println("MPLOU");
+						System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
+					}
+				}
 			}
 			{
 				Object temp[] = node.getCommaExp().toArray();
 				for(int i = 0; i < temp.length; i++) {
 					((PCommaExp) temp[i]).apply(this);
+					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) {
+						if(return_type == null) {
+							System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
+						}
+					}
 				}
 			}
 		}else {
 			in_function = false;
+			System.out.println("Line "+" : Function mpla " +" doesn't return something");
 			//return_type = null;
 		}
-        outAPrintStatement(node);
+		outAPrintStatement(node);
+		
+		//TODO check if a function used in print statements returns something (same for all assign statements and list assign statements)
     }
 
 
