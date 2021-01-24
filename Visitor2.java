@@ -6,11 +6,16 @@ public class Visitor2 extends DepthFirstAdapter {
 
 	private Hashtable <String,ArrayList<Node>> symtable;	
 	int errors; Node fun;
-	String return_type;
+	//HashTable<String,String> function_return_types;
+
+
+	String return_type; 
+	boolean in_function = false;
 
 	Visitor2(Hashtable symtable) {
 		this.symtable = symtable;
 		errors = 0;
+		//function_return_types = new HashTable<String,String>();
     }
 	
 	//call non defined function. call function with wrong args
@@ -59,6 +64,7 @@ public class Visitor2 extends DepthFirstAdapter {
 						}
 						if((default_n_params==0 && params==n_params) 
 						|| (params >= n_params-default_n_params && n_params >= params)) {
+							System.out.println("FOUND FUNCTION");
 							enough_args = true;
 							fun = ((AFunction)nodes.get(i));
 							break;
@@ -81,7 +87,10 @@ public class Visitor2 extends DepthFirstAdapter {
             }
 		
 		System.out.println("THE FUNCTION ISSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"+fun);
-		if(fun!=null) ((AFunction)fun).apply(this);
+		if(fun!=null) {
+			System.out.println("FUN TO STRING = "+fun.toString());
+			((AFunction)fun).apply(this); //to find return type
+		}
         outAFunctionCall(node);
 	}
 	
@@ -94,8 +103,9 @@ public class Visitor2 extends DepthFirstAdapter {
 
 		int other_line=0;
         if(node.getLpar() != null) {
-			node.getLpar().apply(this);
 			Node left = node.getLpar();
+			if(left instanceof AFuncCallExpression) in_function = true;
+			left.apply(this);
 			System.out.println("Printing left: "+ left);
 			
 			if(!(left instanceof AAddExpression || left instanceof AMinExpression || left instanceof AMultExpression 
@@ -148,7 +158,7 @@ public class Visitor2 extends DepthFirstAdapter {
 					}
 				}else if(left instanceof AFuncCallExpression) {
 					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-					System.out.println(return_type);
+
 					String type =return_type;
 					if(type==null){
 						System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
@@ -243,6 +253,8 @@ public class Visitor2 extends DepthFirstAdapter {
 	}
 
 
+
+	/** Check the return statement of a function to use it as a type for function calls in expressions */
 	@Override
 	public void inAReturnStatement(AReturnStatement node) {
 		System.out.println("WE ARE INSIDE THE RETURN IN FUNCTION ");
@@ -252,17 +264,19 @@ public class Visitor2 extends DepthFirstAdapter {
 			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
 			return_type = "NUMBER";
 		}else if(expression instanceof AValueExpression) {
+			in_function = false;
 			PValue val = ((AValueExpression)expression).getValue();
-			System.out.println("In visitor "+ fun);
-			if(val instanceof ANumValue) { return_type = "NUMBER";  System.out.println("SETTING OUT FOR FUNCTION ");}
+			if(val instanceof ANumValue) return_type = "NUMBER";
 			else if (val instanceof ANoneValue) return_type = "NONE";
 			else if (val instanceof AStringValue) return_type = "STRING";
-		}else if(expression instanceof ATypeExpression) return_type = "TYPE";
-		else if(expression instanceof AOpenExpression) return_type = "OPEN";
+		}else if(expression instanceof ATypeExpression) { return_type = "TYPE"; in_function = false; }
+		else if(expression instanceof AOpenExpression) { return_type = "OPEN"; in_function = false; }
 		else if(expression instanceof AListConExpression) {
 			System.out.println("Line " + ": " +"Invalid Syntax");
 			errors++;
+			in_function = false;
 		}else if(expression instanceof AListexpExpression ) {
+			in_function = false;
 			String id = ((AListexpExpression)expression).getId().toString();
 			//if it's a global variable
 			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
@@ -270,14 +284,15 @@ public class Visitor2 extends DepthFirstAdapter {
 			for(int i = 0; i < nodes.size(); i++) {
 				if(nodes.get(i) instanceof AAssignStatement){
 					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+					//System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
 					if(other_line > line) break;
 					else n = (AAssignStatement)nodes.get(i);
 			}}
 			return_type = (String)getOut(n);
-			//if it's an argument in a function call
+			//TODO if it's an argument in a function call ..
 		}
 		else if(expression instanceof AIdExpression) {
+			in_function = false;
 			String id = ((AIdExpression)expression).getId().toString();
 			//if it's a global variable
 			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
@@ -285,15 +300,38 @@ public class Visitor2 extends DepthFirstAdapter {
 			for(int i = 0; i < nodes.size(); i++) {
 				if(nodes.get(i) instanceof AAssignStatement){
 					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
+					//System.out.println("Node with the same id "+ ((AAssignStatement)nodes.get(i)).getId().toString()+" in line "+other_line);
 					if(other_line > line) break;
 					else n = (AAssignStatement)nodes.get(i);
 			}}
 			return_type = (String)getOut(n);
+			//TODO if it's an argument in a function call ..
 		}
 	}
-	
-	
+
+	//if a function doesn't have a return statement
+	@Override
+	public void caseAPrintStatement(APrintStatement node) {
+		inAPrintStatement(node);
+		if(!in_function) {
+			if(node.getExpression() != null) {
+				node.getExpression().apply(this);
+			}
+			{
+				Object temp[] = node.getCommaExp().toArray();
+				for(int i = 0; i < temp.length; i++) {
+					((PCommaExp) temp[i]).apply(this);
+				}
+			}
+		}else {
+			in_function = false;
+			//return_type = null;
+		}
+        outAPrintStatement(node);
+    }
+
+
+	/** Store the type of an id in the OUT hashtable */
 	@Override
 	public void inAAssignStatement(AAssignStatement node) {
 		//get value type and store in "out" Hashtable
