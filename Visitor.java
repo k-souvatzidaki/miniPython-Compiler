@@ -77,6 +77,8 @@ public class Visitor extends DepthFirstAdapter {
 				else symtable.get(function_name).add(node);
 			}
 			//proceed to check arguments
+			//BUG FIX: initialize arguments array here for no null pointers in name_exists if no args
+			arguments = new ArrayList<String>();
 			for(int i = 0; i < temp.length; i++) {
 				((PArgument) temp[i]).apply(this);
 			}
@@ -97,7 +99,7 @@ public class Visitor extends DepthFirstAdapter {
 
 
 	public void caseAArgument(AArgument node) {
-        inAArgument(node);
+		inAArgument(node);
         if(node.getId() != null) {
             node.getId().apply(this);
         }
@@ -110,7 +112,8 @@ public class Visitor extends DepthFirstAdapter {
 		{
 			//check for duplicate argument names in the same function
 			String arg_name = node.getId().toString();
-			arguments = new ArrayList<String>(Arrays.asList(arg_name));
+			//BUG FIX pt2
+			arguments.add(arg_name);
 			Object temp[] = node.getCommaAssign().toArray();
 			boolean flag = true;
 			int line = ((TId) node.getId()).getLine();
