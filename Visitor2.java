@@ -227,9 +227,11 @@ public class Visitor2 extends DepthFirstAdapter {
 					System.out.println("ou");
 					line = ((AIdExpression)left).getId().getLine();
 					if(in_function_call) {
-						System.out.println("IN FUNCTION CALL");
-						int index = real.indexOf(id);
-						type = passed.get(index);
+						if(real.contains(id)){
+							System.out.println("IN FUNCTION CALL");
+							int index = real.indexOf(id);
+							type = passed.get(index);
+						}
 					}
 					if (type==null){
 						System.out.println("TYPE IS NULL");
@@ -309,9 +311,11 @@ public class Visitor2 extends DepthFirstAdapter {
 					nodes = symtable.get(id); n = null;
 					line = ((AIdExpression)right).getId().getLine();
 					if(in_function_call) {
-						System.out.println("IN FUNCTION CALL");
-						int index = real.indexOf(id);
-						type = passed.get(index);
+						if(real.contains(id)){
+							System.out.println("IN FUNCTION CALL");
+							int index = real.indexOf(id);
+							type = passed.get(index);
+						}
 					}
 					if (type==null){
 						System.out.println("TYPE IS NULL");
@@ -402,14 +406,25 @@ public class Visitor2 extends DepthFirstAdapter {
 			//if it's a global variable
 			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
 			int line = ((AIdExpression)expression).getId().getLine(); int other_line;
-			for(int i = 0; i < nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement){
-					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					if(other_line > line) break;
-					else n = (AAssignStatement)nodes.get(i);
-			}}
-			return_type = (String)getOut(n);
-			//TODO if it's an argument in a function call ..
+			if(in_function_call) {
+				if(real_arguments.contains(id)){
+					System.out.println("IN FUNCTION CALL");
+					int index = real_arguments.indexOf(id);
+					return_type = passed_arguments_types.get(index);
+				}
+			}
+			if(return_type==null){
+				for(int i = 0; i < nodes.size(); i++) {
+					if(nodes.get(i) instanceof AAssignStatement){
+						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+						if(other_line > line) break;
+						else n = (AAssignStatement)nodes.get(i);
+						return_type = (String)getOut(n);
+				}}
+			}
+			/*if(in_func_declaration && real_arguments==null){
+
+			}*/
 		}
 	}
 
