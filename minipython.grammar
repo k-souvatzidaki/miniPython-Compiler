@@ -6,8 +6,10 @@ Helpers
 	cr = 13; 
 	lf = 10;
 	all = [0..127]; 
-	eol = lf | cr | cr lf ;
-	not_eol = [all - [cr + lf]] ; 
+	eol = lf | cr | cr lf;
+	not_eol = [all - [cr + lf]] ;
+	not_single = [not_eol - 39];
+	not_double = [not_eol - 34];
 
 Tokens
 	def = 'def';
@@ -54,7 +56,7 @@ Tokens
 	line_comment = '#' not_eol* eol; 
 	number = digit+ | (digit+ '.' digit+);
 	id = letter (letter | digit)*;
-	string = '"' not_eol* '"' | ''' not_eol* ''';
+	string = '"' not_double* '"' | ''' not_single* ''';
 	blank = (' ' | lf | cr);
 	
 Ignored Tokens

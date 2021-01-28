@@ -46,6 +46,7 @@ public class Visitor2 extends DepthFirstAdapter {
 			if(params == 1) {
 				passed.add(((AArglist)node.getArglist().get(0)).getExpression()); 
 				params+= ((AArglist)node.getArglist().get(0)).getCommaExp().size();
+				System.out.println("Params "+params +"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 				for(int i = 0; i < params-1; i++) {
 					passed.add(((ACommaExp)((AArglist)node.getArglist().get(0)).getCommaExp().get(i)).getExpression());
 				}
@@ -266,18 +267,20 @@ public class Visitor2 extends DepthFirstAdapter {
 					}
 				}else if(left instanceof AFuncCallExpression) {
 					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-					type = return_type;
-					if(type==null){
-						System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
-					}
-					else if(type.equals("NONE")) {
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					}else if(type.equals("OPEN")) { 
-						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-					}else if(type.equals("TYPE")) { 
-						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-					}else if(!type.equals("NUMBER")) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
+					if (fun!= null){
+						type = return_type;
+						if(type==null){
+							System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+						}
+						else if(type.equals("NONE")) {
+							System.out.println("Line " + ": " +"Add operation cannot be done on None");
+						}else if(type.equals("OPEN")) { 
+							System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+						}else if(type.equals("TYPE")) { 
+							System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+						}else if(!type.equals("NUMBER")) {
+							System.out.println("Line " + ": " +"Add operation must be on numbers only");
+						}
 					}
 				}else if(left instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
@@ -285,6 +288,7 @@ public class Visitor2 extends DepthFirstAdapter {
 
 		if(node.getRpar() != null) {
 			Node right = node.getRpar();
+			//call func arithmetic
 			if(right instanceof AFuncCallExpression) {
 				in_function = true;
 			}
@@ -354,25 +358,116 @@ public class Visitor2 extends DepthFirstAdapter {
 					}
 				}else if(right instanceof AFuncCallExpression) {
 					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-					type =return_type;
-					if(type==null){
-						System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+					if (fun!=null){
+						type =return_type;
+						if(type==null && fun!=null){
+							System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+						}
+						else if(type.equals("NONE")) {
+							System.out.println("Line " + ": " +"Add operation cannot be done on None");
+						}else if(type.equals("OPEN")) { 
+							System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+						}else if(type.equals("TYPE")) { 
+							System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+						}else if(!type.equals("NUMBER")) {
+							System.out.println("Line " + ": " +"Add operation must be on numbers only");
+						}	
 					}
-					else if(type.equals("NONE")) {
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					}else if(type.equals("OPEN")) { 
-						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-					}else if(type.equals("TYPE")) { 
-						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-					}else if(!type.equals("NUMBER")) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}	
 				}else if(right instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
 		}}}
         outAAddExpression(node);
 	}
 
+	/*private void arithmetic(PExpression expression, String operation){
+		String line;
+		String error_msg = operation+ " operation must be on numbers only";
+		if(expression instanceof AFuncCallExpression) {
+			in_function = true;
+		}
+		expression.apply(this);
+		if(in_function_call) {
+			//deep copy arguments arrays
+			real = new ArrayList<String>();
+			for(String s : real_arguments) real.add(s);
+			passed = new ArrayList<String>();
+			for(String no : passed_arguments_types) passed.add(no);
+		}
+		if(!(expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
+			|| expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression
+			|| expression instanceof AParExpression)) {
+			if(expression instanceof ATypeExpression) {
+				System.out.println("Line " + ": " +"Add operation cannot be done on Type ");
+			}else if(expression instanceof AOpenExpression) {
+				System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+			}else if(expression instanceof AValueExpression) {
+				PValue val = ((AValueExpression)expression).getValue();
+				if(val instanceof ANoneValue) {
+					System.out.println("Line " + ": " +"Add operation cannot be done on None");
+				} else if(!(val instanceof ANumValue)) {
+					System.out.println("Line " + ": " +"Add operation must be on numbers only");
+				}
+			}else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
+				String id;
+				if (expression instanceof AIdExpression) {
+					id = ((AIdExpression)expression).getId().toString();
+					line = ((AIdExpression)expression).getId().getLine();
+				}else {
+					id = ((AListexpExpression)expression).getId().toString();
+					line = ((AListexpExpression)expression).getId().getLine();
+				}
+				nodes = symtable.get(id); n = null;
+				if(in_function_call) {
+					if(real.contains(id)){
+						System.out.println("IN FUNCTION CALL");
+						int index = real.indexOf(id);
+						type = passed.get(index);
+					}
+				}
+				if (type==null){
+					System.out.println("TYPE IS NULL");
+					for(int i = 0; i < nodes.size(); i++) {
+						if(nodes.get(i) instanceof AAssignStatement){
+							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+							if(other_line > line) break;
+							else n = (AAssignStatement)nodes.get(i);
+							type = (String)getOut(n);
+						}
+					}
+				}
+				if(in_func_declaration && real_arguments == null) {
+					type = "NUMBER";
+					System.out.println("TYPE IS STILL NULL");
+				}
+				
+				if(type.equals("NONE")){
+					System.out.println("Line " + ": " +"Add operation cannot be done on None");
+				}else if(type.equals("TYPE")){
+					System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+				}else if(type.equals("OPEN")){
+					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+				}else if(!type.equals("NUMBER")) {
+					System.out.println("Line " + ": " +"Add operation must be on numbers only");
+				}
+			}else if(right instanceof AFuncCallExpression) {
+				//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
+				type =return_type;
+				if(type==null){
+					System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+				}
+				else if(type.equals("NONE")) {
+					System.out.println("Line " + ": " +"Add operation cannot be done on None");
+				}else if(type.equals("OPEN")) { 
+					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
+				}else if(type.equals("TYPE")) { 
+					System.out.println("Line " + ": " +"Add operation cannot be done on Type");
+				}else if(!type.equals("NUMBER")) {
+					System.out.println("Line " + ": " +"Add operation must be on numbers only");
+				}	
+			}else if(right instanceof AListConExpression) {
+				System.out.println("Line " + ": " +"Invalid Syntax");
+			}}
+	}*/
 
 	/** Check the return statement of a function to use it as a type for function calls in expressions */
 	@Override
@@ -454,9 +549,9 @@ public class Visitor2 extends DepthFirstAdapter {
 				Object temp[] = node.getCommaExp().toArray();
 				for(int i = 0; i < temp.length; i++) {
 					((PCommaExp) temp[i]).apply(this);
-					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) {
+					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) { 
 						if(return_type == null) {
-							System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
+							System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
 						}
 					}
 				}
