@@ -220,12 +220,18 @@ public class Visitor2 extends DepthFirstAdapter {
 					} else if(!(val instanceof ANumValue)) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
-				}else if(left instanceof AIdExpression) {
-					String id = ((AIdExpression)left).getId().toString();
+				}else if(left instanceof AIdExpression || left instanceof AListexpExpression) {
+					String id;
+					if (left instanceof AIdExpression) {
+						id = ((AIdExpression)left).getId().toString();
+						line = ((AIdExpression)left).getId().getLine();
+					}else {
+						id = ((AListexpExpression)left).getId().toString();
+						line = ((AListexpExpression)left).getId().getLine();
+					}
 					//System.out.println("a");
 					nodes = symtable.get(id); n = null;
 					System.out.println("ou");
-					line = ((AIdExpression)left).getId().getLine();
 					if(in_function_call) {
 						if(real.contains(id)){
 							System.out.println("IN FUNCTION CALL");
@@ -273,8 +279,6 @@ public class Visitor2 extends DepthFirstAdapter {
 					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
-				}else if(left instanceof AListexpExpression) {
-					//TODO
 				}else if(left instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
 		}}}
@@ -306,10 +310,16 @@ public class Visitor2 extends DepthFirstAdapter {
 					} else if(!(val instanceof ANumValue)) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}
-				}else if(right instanceof AIdExpression) {
-					String id = ((AIdExpression)right).getId().toString();
+				}else if(right instanceof AIdExpression || right instanceof AListexpExpression) {
+					String id;
+					if (right instanceof AIdExpression) {
+						id = ((AIdExpression)right).getId().toString();
+						line = ((AIdExpression)right).getId().getLine();
+					}else {
+						id = ((AListexpExpression)right).getId().toString();
+						line = ((AListexpExpression)right).getId().getLine();
+					}
 					nodes = symtable.get(id); n = null;
-					line = ((AIdExpression)right).getId().getLine();
 					if(in_function_call) {
 						if(real.contains(id)){
 							System.out.println("IN FUNCTION CALL");
@@ -357,8 +367,6 @@ public class Visitor2 extends DepthFirstAdapter {
 					}else if(!type.equals("NUMBER")) {
 						System.out.println("Line " + ": " +"Add operation must be on numbers only");
 					}	
-				}else if(right instanceof AListexpExpression) {
-					//TODO
 				}else if(right instanceof AListConExpression) {
 					System.out.println("Line " + ": " +"Invalid Syntax");
 		}}}
@@ -385,27 +393,19 @@ public class Visitor2 extends DepthFirstAdapter {
 		else if(expression instanceof AListConExpression) {
 			System.out.println("Line " + ": " +"Invalid Syntax");
 			errors++; in_function = false;
-		}else if(expression instanceof AListexpExpression ) {
-			in_function = false;
-			String id = ((AListexpExpression)expression).getId().toString();
-			//if it's a global variable
-			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
-			int line = ((AListexpExpression)expression).getId().getLine(); int other_line;
-			for(int i = 0; i < nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement){
-					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					if(other_line > line) break;
-					else n = (AAssignStatement)nodes.get(i);
-			}}
-			return_type = (String)getOut(n);
-			//TODO if it's an argument in a function call ..
 		}
-		else if(expression instanceof AIdExpression) {
+		else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
+			String id; int line;
+			if (expression instanceof AIdExpression) {
+				id = ((AIdExpression)expression).getId().toString();
+				line = ((AIdExpression)expression).getId().getLine();
+			}else {
+				id = ((AListexpExpression)expression).getId().toString();
+				line = ((AListexpExpression)expression).getId().getLine();
+			}
 			in_function = false;
-			String id = ((AIdExpression)expression).getId().toString();
 			//if it's a global variable
-			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
-			int line = ((AIdExpression)expression).getId().getLine(); int other_line;
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null; int other_line;
 			if(in_function_call) {
 				if(real_arguments.contains(id)){
 					System.out.println("IN FUNCTION CALL");
