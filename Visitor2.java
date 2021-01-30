@@ -16,7 +16,7 @@ public class Visitor2 extends DepthFirstAdapter {
 		in_function = false;
 		in_function_call = false;
 	}
-	
+
 	@Override
 	public void inAFunction(AFunction node) {
 		in_func_declaration = true;
@@ -46,7 +46,6 @@ public class Visitor2 extends DepthFirstAdapter {
 			if(params == 1) {
 				passed.add(((AArglist)node.getArglist().get(0)).getExpression()); 
 				params+= ((AArglist)node.getArglist().get(0)).getCommaExp().size();
-				System.out.println("Params "+params +"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 				for(int i = 0; i < params-1; i++) {
 					passed.add(((ACommaExp)((AArglist)node.getArglist().get(0)).getCommaExp().get(i)).getExpression());
 				}
@@ -136,440 +135,295 @@ public class Visitor2 extends DepthFirstAdapter {
 		}
         outAFunctionCall(node);
 	}
-
-	//find the type of an id variable
-	public String getExpressionType(PExpression expression) {
-		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
-		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
-			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
-			return "NUMBER";
-		}else if(expression instanceof AValueExpression) {
-			PValue val = ((AValueExpression)expression).getValue();
-			if(val instanceof ANumValue) return "NUMBER";
-			else if (val instanceof ANoneValue) return "NONE";
-			else if (val instanceof AStringValue) return "STRING";
-		}else if(expression instanceof ATypeExpression) return  "TYPE";
-		else if(expression instanceof AOpenExpression) return "OPEN";
-		else if(expression instanceof AListConExpression) {
-			System.out.println("Line " + ": " +"Invalid Syntax");
-			errors++;
-		}else if(expression instanceof AListexpExpression ) {
-			String id = ((AListexpExpression)expression).getId().toString();
-			//if it's a global variable
-			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
-			int line = ((AListexpExpression)expression).getId().getLine(); int other_line;
-			for(int i = 0; i < nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement){
-					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					if(other_line > line) break;
-					else n = (AAssignStatement)nodes.get(i);
-				}
-			}
-			return (String)getOut(n);
-		}
-		else if(expression instanceof AIdExpression) {
-			String id = ((AIdExpression)expression).getId().toString();
-			//if it's a global variable
-			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
-			int line = ((AIdExpression)expression).getId().getLine(); int other_line;
-			for(int i = 0; i < nodes.size(); i++) {
-				if(nodes.get(i) instanceof AAssignStatement){
-					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-					if(other_line > line) break;
-					else n = (AAssignStatement)nodes.get(i);
-			}}
-			return (String)getOut(n);
-		}
-		return null;
-	}
-
 	
 
 	/** Operations typechecking for variables and function calls */ 
 	//ADD
 	@Override
 	public void caseAAddExpression(AAddExpression node) {
-		System.out.println("HERE");
 		inAAddExpression(node);
-		int other_line=0; String type = null; AAssignStatement n; ArrayList<Node> nodes; int line;
-		ArrayList<String> real = null; ArrayList<String> passed = null;
-        if(node.getLpar() != null) {
+		if(node.getLpar() != null) {
 			Node left = node.getLpar();
-			if(left instanceof AFuncCallExpression) {
-				in_function = true;
-			}
-			left.apply(this);
-			if(in_function_call) {
-				//deep copy arguments arrays
-				System.out.println("MPLOU");
-				real = new ArrayList<String>();
-				for(String s : real_arguments) real.add(s);
-				passed = new ArrayList<String>();
-				for(String no : passed_arguments_types) passed.add(no);
-			}
-			if(!(left instanceof AAddExpression || left instanceof AMinExpression || left instanceof AMultExpression 
-				|| left instanceof AMultmultExpression || left instanceof AModExpression || left instanceof ADivExpression 
-				|| left instanceof AParExpression)) {
-				if(left instanceof ATypeExpression) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on Type ");
-				}else if(left instanceof AOpenExpression) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-				}else if(left instanceof AValueExpression) {
-					PValue val = ((AValueExpression)left).getValue();
-					if(val instanceof ANoneValue) {
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					} else if(!(val instanceof ANumValue)) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}
-				}else if(left instanceof AIdExpression || left instanceof AListexpExpression) {
-					String id;
-					if (left instanceof AIdExpression) {
-						id = ((AIdExpression)left).getId().toString();
-						line = ((AIdExpression)left).getId().getLine();
-					}else {
-						id = ((AListexpExpression)left).getId().toString();
-						line = ((AListexpExpression)left).getId().getLine();
-					}
-					//System.out.println("a");
-					nodes = symtable.get(id); n = null;
-					System.out.println("ou");
-					if(in_function_call) {
-						if(real.contains(id)){
-							System.out.println("IN FUNCTION CALL");
-							int index = real.indexOf(id);
-							type = passed.get(index);
-						}
-					}
-					if (type==null){
-						System.out.println("TYPE IS NULL");
-						for(int i = 0; i < nodes.size(); i++) {
-							if(nodes.get(i) instanceof AAssignStatement){
-								other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-								if(other_line > line) break;
-								else n = (AAssignStatement)nodes.get(i);
-								type = (String)getOut(n);
-							}
-						}
-					}
-					if(in_func_declaration && real_arguments == null) {
-						type = "NUMBER";
-						System.out.println("TYPE IS STILL NULL");
-					}
-					
-					if(type.equals("NONE")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					}else if(type.equals("TYPE")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-					}else if(type.equals("OPEN")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on open");
-					}else if(!type.equals("NUMBER")) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}
-				}else if(left instanceof AFuncCallExpression) {
-					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-					if (fun!= null){
-						type = return_type;
-						if(type==null){
-							System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
-						}
-						else if(type.equals("NONE")) {
-							System.out.println("Line " + ": " +"Add operation cannot be done on None");
-						}else if(type.equals("OPEN")) { 
-							System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-						}else if(type.equals("TYPE")) { 
-							System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-						}else if(!type.equals("NUMBER")) {
-							System.out.println("Line " + ": " +"Add operation must be on numbers only");
-						}
-					}
-				}else if(left instanceof AListConExpression) {
-					System.out.println("Line " + ": " +"Invalid Syntax");
-		}}}
-
+			arithmetic((PExpression)left,"Add");
+		}
 		if(node.getRpar() != null) {
 			Node right = node.getRpar();
-			//call func arithmetic
-			if(right instanceof AFuncCallExpression) {
-				in_function = true;
-			}
-			right.apply(this);
-			if(in_function_call) {
-				//deep copy arguments arrays
-				real = new ArrayList<String>();
-				for(String s : real_arguments) real.add(s);
-				passed = new ArrayList<String>();
-				for(String no : passed_arguments_types) passed.add(no);
-			}
-			if(!(right instanceof AAddExpression || right instanceof AMinExpression || right instanceof AMultExpression 
-				|| right instanceof AMultmultExpression || right instanceof AModExpression || right instanceof ADivExpression
-				|| right instanceof AParExpression)) {
-				if(right instanceof ATypeExpression) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on Type ");
-				}else if(right instanceof AOpenExpression) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-				}else if(right instanceof AValueExpression) {
-					PValue val = ((AValueExpression)right).getValue();
-					if(val instanceof ANoneValue) {
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					} else if(!(val instanceof ANumValue)) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}
-				}else if(right instanceof AIdExpression || right instanceof AListexpExpression) {
-					String id;
-					if (right instanceof AIdExpression) {
-						id = ((AIdExpression)right).getId().toString();
-						line = ((AIdExpression)right).getId().getLine();
-					}else {
-						id = ((AListexpExpression)right).getId().toString();
-						line = ((AListexpExpression)right).getId().getLine();
-					}
-					nodes = symtable.get(id); n = null;
-					if(in_function_call) {
-						if(real.contains(id)){
-							System.out.println("IN FUNCTION CALL");
-							int index = real.indexOf(id);
-							type = passed.get(index);
-						}
-					}
-					if (type==null){
-						System.out.println("TYPE IS NULL");
-						for(int i = 0; i < nodes.size(); i++) {
-							if(nodes.get(i) instanceof AAssignStatement){
-								other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-								if(other_line > line) break;
-								else n = (AAssignStatement)nodes.get(i);
-								type = (String)getOut(n);
-							}
-						}
-					}
-					if(in_func_declaration && real_arguments == null) {
-						type = "NUMBER";
-						System.out.println("TYPE IS STILL NULL");
-					}
-					
-					if(type.equals("NONE")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on None");
-					}else if(type.equals("TYPE")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-					}else if(type.equals("OPEN")){
-						System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-					}else if(!type.equals("NUMBER")) {
-						System.out.println("Line " + ": " +"Add operation must be on numbers only");
-					}
-				}else if(right instanceof AFuncCallExpression) {
-					//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-					if (fun!=null){
-						type =return_type;
-						if(type==null && fun!=null){
-							System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
-						}
-						else if(type.equals("NONE")) {
-							System.out.println("Line " + ": " +"Add operation cannot be done on None");
-						}else if(type.equals("OPEN")) { 
-							System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-						}else if(type.equals("TYPE")) { 
-							System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-						}else if(!type.equals("NUMBER")) {
-							System.out.println("Line " + ": " +"Add operation must be on numbers only");
-						}	
-					}
-				}else if(right instanceof AListConExpression) {
-					System.out.println("Line " + ": " +"Invalid Syntax");
-		}}}
+			arithmetic((PExpression)right,"Add");
+		}
         outAAddExpression(node);
 	}
-
-	/*private void arithmetic(PExpression expression, String operation){
-		String line;
-		String error_msg = operation+ " operation must be on numbers only";
-		if(expression instanceof AFuncCallExpression) {
-			in_function = true;
-		}
-		expression.apply(this);
-		if(in_function_call) {
-			//deep copy arguments arrays
-			real = new ArrayList<String>();
-			for(String s : real_arguments) real.add(s);
-			passed = new ArrayList<String>();
-			for(String no : passed_arguments_types) passed.add(no);
-		}
-		if(!(expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
-			|| expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression
-			|| expression instanceof AParExpression)) {
-			if(expression instanceof ATypeExpression) {
-				System.out.println("Line " + ": " +"Add operation cannot be done on Type ");
-			}else if(expression instanceof AOpenExpression) {
-				System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-			}else if(expression instanceof AValueExpression) {
-				PValue val = ((AValueExpression)expression).getValue();
-				if(val instanceof ANoneValue) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on None");
-				} else if(!(val instanceof ANumValue)) {
-					System.out.println("Line " + ": " +"Add operation must be on numbers only");
-				}
-			}else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
-				String id;
-				if (expression instanceof AIdExpression) {
-					id = ((AIdExpression)expression).getId().toString();
-					line = ((AIdExpression)expression).getId().getLine();
-				}else {
-					id = ((AListexpExpression)expression).getId().toString();
-					line = ((AListexpExpression)expression).getId().getLine();
-				}
-				nodes = symtable.get(id); n = null;
-				if(in_function_call) {
-					if(real.contains(id)){
-						System.out.println("IN FUNCTION CALL");
-						int index = real.indexOf(id);
-						type = passed.get(index);
-					}
-				}
-				if (type==null){
-					System.out.println("TYPE IS NULL");
-					for(int i = 0; i < nodes.size(); i++) {
-						if(nodes.get(i) instanceof AAssignStatement){
-							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
-							if(other_line > line) break;
-							else n = (AAssignStatement)nodes.get(i);
-							type = (String)getOut(n);
-						}
-					}
-				}
-				if(in_func_declaration && real_arguments == null) {
-					type = "NUMBER";
-					System.out.println("TYPE IS STILL NULL");
-				}
-				
-				if(type.equals("NONE")){
-					System.out.println("Line " + ": " +"Add operation cannot be done on None");
-				}else if(type.equals("TYPE")){
-					System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-				}else if(type.equals("OPEN")){
-					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-				}else if(!type.equals("NUMBER")) {
-					System.out.println("Line " + ": " +"Add operation must be on numbers only");
-				}
-			}else if(right instanceof AFuncCallExpression) {
-				//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
-				type =return_type;
-				if(type==null){
-					System.out.println("Line " + ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
-				}
-				else if(type.equals("NONE")) {
-					System.out.println("Line " + ": " +"Add operation cannot be done on None");
-				}else if(type.equals("OPEN")) { 
-					System.out.println("Line " + ": " +"Add operation cannot be done on Open");
-				}else if(type.equals("TYPE")) { 
-					System.out.println("Line " + ": " +"Add operation cannot be done on Type");
-				}else if(!type.equals("NUMBER")) {
-					System.out.println("Line " + ": " +"Add operation must be on numbers only");
-				}	
-			}else if(right instanceof AListConExpression) {
-				System.out.println("Line " + ": " +"Invalid Syntax");
-			}}
-	}*/
-
-	/** Check the return statement of a function to use it as a type for function calls in expressions */
+	//MINUS
 	@Override
-	public void inAReturnStatement(AReturnStatement node) {
-		PExpression expression = node.getExpression();
-		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
-		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
-			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
-			return_type = "NUMBER";
-		}else if(expression instanceof AValueExpression) {
-			in_function = false;
-			PValue val = ((AValueExpression)expression).getValue();
-			if(val instanceof ANumValue) return_type = "NUMBER";
-			else if (val instanceof ANoneValue) return_type = "NONE";
-			else if (val instanceof AStringValue) return_type = "STRING";
-		}else if(expression instanceof ATypeExpression) { return_type = "TYPE"; in_function = false; }
-		else if(expression instanceof AOpenExpression) { return_type = "OPEN"; in_function = false; }
-		else if(expression instanceof AListConExpression) {
-			System.out.println("Line " + ": " +"Invalid Syntax");
-			errors++; in_function = false;
+	public void caseAMinusExpression(AMinusExpression node) {
+		inAMinusExpression(node);
+		if(node.getLpar() != null) {
+			Node left = node.getLpar();
+			arithmetic((PExpression)left,"Minus");
 		}
-		else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
-			String id; int line;
-			if (expression instanceof AIdExpression) {
-				id = ((AIdExpression)expression).getId().toString();
-				line = ((AIdExpression)expression).getId().getLine();
-			}else {
-				id = ((AListexpExpression)expression).getId().toString();
-				line = ((AListexpExpression)expression).getId().getLine();
-			}
-			in_function = false;
-			//if it's a global variable
+		if(node.getRpar() != null) {
+			Node right = node.getRpar();
+			arithmetic((PExpression)right,"Minus");
+		}
+        outAMinusExpression(node);
+	}
+	//DIV
+	@Override
+	public void caseADivExpression(ADivExpression node) {
+		inADivExpression(node);
+		if(node.getLpar() != null) {
+			Node left = node.getLpar();
+			arithmetic((PExpression)left,"Div");
+		}
+		if(node.getRpar() != null) {
+			Node right = node.getRpar();
+			arithmetic((PExpression)right,"Div");
+		}
+        outADivExpression(node);
+	}
+	//MOD
+	@Override
+	public void caseAModExpression(AModExpression node) {
+		inAModExpression(node);
+		if(node.getLpar() != null) {
+			Node left = node.getLpar();
+			arithmetic((PExpression)left,"Mod");
+		}
+		if(node.getRpar() != null) {
+			Node right = node.getRpar();
+			arithmetic((PExpression)right,"Mod");
+		}
+        outAModExpression(node);
+	}
+	//MULT
+	@Override
+	public void caseAMultExpression(AMultExpression node) {
+		inAMultExpression(node);
+		if(node.getLpar() != null) {
+			Node left = node.getLpar();
+			arithmetic((PExpression)left,"Mult");
+		}
+		if(node.getRpar() != null) {
+			Node right = node.getRpar();
+			arithmetic((PExpression)right,"Mult");
+		}
+        outAMultExpression(node);
+	}
+	//MULTMULT
+	@Override
+	public void caseAMultmultExpression(AMultmultExpression node) {
+		inAMultmultExpression(node);
+		if(node.getLpar() != null) {
+			Node left = node.getLpar();
+			arithmetic((PExpression)left,"Power");
+		}
+		if(node.getRpar() != null) {
+			Node right = node.getRpar();
+			arithmetic((PExpression)right,"Power");
+		}
+        outAMultmultExpression(node);
+	}
+	/** Same for logical operations */ 
+	//LESS
+	@Override
+	public void caseALessComparisonOr(ALessComparisonOr node) {
+        inALessComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Less");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Less");
+        }
+        outALessComparisonOr(node);
+	}
+	//GREAT
+	@Override
+	public void caseAGreatComparisonOr(AGreatComparisonOr node) {
+        inAGreatComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Greater");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Greater");
+        }
+        outAGreatComparisonOr(node);
+	}
+	//GREATER-EQUALS
+	@Override
+	public void caseAGeqComparisonOr(AGeqComparisonOr node) {
+        inAGeqComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Greater-equals");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Greater-equals");
+        }
+        outAGeqComparisonOr(node);
+	}
+	//LESS-EQUALS
+	@Override
+	public void caseALeqComparisonOr(ALeqComparisonOr node) {
+        inALeqComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Less-equals");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Less-equals");
+        }
+        outALeqComparisonOr(node);
+	}
+	//NEQ
+	@Override
+	public void caseANeqComparisonOr(ANeqComparisonOr node) {
+        inANeqComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Not-equals");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Not-equals");
+        }
+        outANeqComparisonOr(node);
+	}
+	//EQUALS
+	@Override
+	public void caseAEqComparisonOr(AEqComparisonOr node) {
+        inAEqComparisonOr(node);
+        if(node.getLpar() != null) {
+			Node left = node.getLpar();
+            arithmetic((PExpression)left,"Equals");
+        }
+        if(node.getRpar() != null) {
+            Node right = node.getRpar();
+			arithmetic((PExpression)right,"Equals");
+        }
+        outAEqComparisonOr(node);
+	}
+	//ASSIGN MIN
+	/** Also, If the expression is a function call, check if it returns something */
+	public void caseAAssignminStatement(AAssignminStatement node) {
+        inAAssignminStatement(node);
+        if(node.getId() != null) {
+			node.getId().apply(this);
+			//check type
+			String id = node.getId().toString();
+			int line = node.getId().getLine(); String type = null;
 			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null; int other_line;
 			if(in_function_call) {
 				if(real_arguments.contains(id)){
-					System.out.println("IN FUNCTION CALL");
 					int index = real_arguments.indexOf(id);
-					return_type = passed_arguments_types.get(index);
-				}
-			}
-			if(return_type==null){
+					type = passed_arguments_types.get(index);
+			}}
+			if (type==null){
 				for(int i = 0; i < nodes.size(); i++) {
 					if(nodes.get(i) instanceof AAssignStatement){
 						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
 						if(other_line > line) break;
 						else n = (AAssignStatement)nodes.get(i);
-						return_type = (String)getOut(n);
-				}}
+						type = (String)getOut(n);
+			}}}
+			if(in_func_declaration && real_arguments == null) type = "NUMBER";
+			if(!type.equals("NUMBER")){
+				System.out.println("Line " + line + "Assign Minus operation must be on numbers only");
+				errors++;
 			}
-			/*if(in_func_declaration && real_arguments==null){
-
-			}*/
-		}
+        }
+        if(node.getExpression() != null) {
+			Node exp = node.getExpression();
+            arithmetic((PExpression)exp,"Assign Minus");
+        }
+        outAAssignminStatement(node);
+    }
+	//ASSIGN DIV
+	/** Also, If the expression is a function call, check if it returns something */
+	public void caseAAssigndivStatement(AAssigndivStatement node) {
+        inAAssigndivStatement(node);
+        if(node.getId() != null) {
+			node.getId().apply(this);
+			//check type
+			String id = node.getId().toString();
+			int line = node.getId().getLine(); String type = null;
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null; int other_line;
+			if(in_function_call) {
+				if(real_arguments.contains(id)){
+					int index = real_arguments.indexOf(id);
+					type = passed_arguments_types.get(index);
+			}}
+			if (type==null){
+				for(int i = 0; i < nodes.size(); i++) {
+					if(nodes.get(i) instanceof AAssignStatement){
+						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+						if(other_line > line) break;
+						else n = (AAssignStatement)nodes.get(i);
+						type = (String)getOut(n);
+			}}}
+			if(in_func_declaration && real_arguments == null) type = "NUMBER";
+			if(!type.equals("NUMBER")){
+				System.out.println("Line " + line + "Assign Minus operation must be on numbers only");
+				errors++;
+			}
+        }
+        if(node.getExpression() != null) {
+            Node exp = node.getExpression();
+            arithmetic((PExpression)exp,"Assign Div");
+        }
+        outAAssigndivStatement(node);
 	}
-
-
-	/** if a function doesn't have a return statement while looking for return type, the return type must be null*/
-
-	//TODO do the same for : assign statements, function call(statement), list assign
+	//List Index (List Expression)
+	/** Also, If the expression is a function call, check if it returns something */
 	@Override
-	public void caseAPrintStatement(APrintStatement node) {
-		inAPrintStatement(node);
-		System.out.println(in_function);
-		//if (node.getExpression() instanceof AFuncCallExpression) in_function=true;
-		if(!in_function) {
-			System.out.println("NOT IN FUNCTION");
-			if(node.getExpression() != null) {
-				//in_function = true;
-				node.getExpression().apply(this);
-				if(node.getExpression() instanceof AFuncCallExpression) {
-					System.out.println("return "+return_type);
-					if(return_type == null) {
-						System.out.println("MPLOU");
-						System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
-					}
-				}
-			}
-			{
-				Object temp[] = node.getCommaExp().toArray();
-				for(int i = 0; i < temp.length; i++) {
-					((PCommaExp) temp[i]).apply(this);
-					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) { 
-						if(return_type == null) {
-							System.out.println("Line "+" : Function "+((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
-						}
-					}
-				}
-			}
-		}else {
-			in_function = false;
-			System.out.println("Line "+" : Function mpla " +" doesn't return something");
-			//return_type = null;
-		}
-		outAPrintStatement(node);
-		
-		//TODO check if a function used in print statements returns something (same for all assign statements and list assign statements)
+	public void caseAListexpExpression(AListexpExpression node) {
+        inAListexpExpression(node);
+        if(node.getId() != null) {
+            node.getId().apply(this);
+        }
+        if(node.getExpression() != null) {
+            Node exp = node.getExpression();
+            arithmetic((PExpression)exp,"List index");
+        }
+        outAListexpExpression(node);
+    }
+	//List Assign
+	/** Also, If the expression is a function call, check if it returns something */
+	@Override
+	public void caseAListStatement(AListStatement node) {
+        inAListStatement(node);
+        if(node.getId() != null) {
+            node.getId().apply(this);
+        }
+        if(node.getLbr() != null) {
+			Node exp = node.getLbr();
+            arithmetic((PExpression)exp,"List index");
+        }
+        if(node.getRbr() != null) {
+			node.getRbr().apply(this);
+			//function call return something?
+
+        }
+        outAListStatement(node);
     }
 
-
-	/** Store the type of an id in the OUT hashtable */
-	@Override
-	public void inAAssignStatement(AAssignStatement node) {
+	
+	/** Store the type of an id in the OUT hashtable 
+	 * If the expression is a function call, check if it returns something
+	*/
+	public void caseAAssignStatement(AAssignStatement node) {
+        inAAssignStatement(node);
+        if(node.getId() != null) {
+            node.getId().apply(this);
+        }
+        if(node.getExpression() != null) {
+            node.getExpression().apply(this);
+		}
+		
 		//get value type and store in "out" Hashtable
 		PExpression exp = node.getExpression();
 		String type = null; 
@@ -604,19 +458,267 @@ public class Visitor2 extends DepthFirstAdapter {
 		else if(exp instanceof ATypeExpression) type = "TYPE";
 		else if(exp instanceof  AListConExpression) {
 			AListConExpression list = (AListConExpression) exp;
-			if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof ANumValue) type = "NUMBER";
-			else type = "STRING";
+			if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof ANumValue) return_type = "NUMBER";
+			else if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof AStringValue) return_type = "STRING";
+			else System.out.println("Line "+": Lists should be initialized with numbers or strings");
 		}else if(exp instanceof AFuncCallExpression) {
-			//??????????
+			type = return_type;
 		} else if(exp instanceof AAddExpression || exp instanceof AMinusExpression || exp instanceof ADivExpression 
 				|| exp instanceof AModExpression || exp instanceof AMultExpression 
 				|| exp instanceof AMultmultExpression || exp instanceof AParExpression){
-					//????????
+					type = "NUMBER";
 		}
 		setOut(node,type);
-		
+
+        outAAssignStatement(node);
+    }
+
+	/** Check the return statement of a function to use it as a type for function calls in expressions */
+	@Override
+	public void inAReturnStatement(AReturnStatement node) {
+		PExpression expression = node.getExpression();
+		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
+		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
+			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
+			return_type = "NUMBER";
+		}else if(expression instanceof AValueExpression) {
+			in_function = false;
+			PValue val = ((AValueExpression)expression).getValue();
+			if(val instanceof ANumValue) return_type = "NUMBER";
+			else if (val instanceof ANoneValue) return_type = "NONE";
+			else if (val instanceof AStringValue) return_type = "STRING";
+		}else if(expression instanceof ATypeExpression) { return_type = "TYPE"; in_function = false; }
+		else if(expression instanceof AOpenExpression) { return_type = "OPEN"; in_function = false; }
+		else if(expression instanceof AListConExpression) {
+			AListConExpression list = (AListConExpression) expression;
+			//int line = 
+			if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof ANumValue) return_type = "NUMBER";
+			else if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof AStringValue) return_type = "STRING";
+			else System.out.println("Line : Lists should be initialized with numbers or strings");
+			in_function = false;
+		}
+		else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
+			String id; int line;
+			if (expression instanceof AIdExpression) {
+				id = ((AIdExpression)expression).getId().toString();
+				line = ((AIdExpression)expression).getId().getLine();
+			}else {
+				id = ((AListexpExpression)expression).getId().toString();
+				line = ((AListexpExpression)expression).getId().getLine();
+			}
+			in_function = false;
+			//if it's a global variable
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null; int other_line;
+			if(in_function_call) {
+				if(real_arguments.contains(id)){
+					int index = real_arguments.indexOf(id);
+					return_type = passed_arguments_types.get(index);
+				}
+			}
+			if(return_type==null){
+				for(int i = 0; i < nodes.size(); i++) {
+					if(nodes.get(i) instanceof AAssignStatement){
+						other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+						if(other_line > line) break;
+						else n = (AAssignStatement)nodes.get(i);
+						return_type = (String)getOut(n);
+		}}}}
 	}
 
+	/**Check if a function in a print statement returns something */
+	@Override
+	public void caseAPrintStatement(APrintStatement node) {
+		inAPrintStatement(node);
+		int line;
+		if(!in_function) {
+			if(node.getExpression() != null) {
+				node.getExpression().apply(this);
+				if(node.getExpression() instanceof AFuncCallExpression) {
+					if(return_type == null) {
+						line = ((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().getLine();
+						System.out.println("Line "+line+ ": Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
+						errors++;
+			}}}
+			{
+				Object temp[] = node.getCommaExp().toArray();
+				for(int i = 0; i < temp.length; i++) {
+					((PCommaExp) temp[i]).apply(this);
+					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) { 
+						if(return_type == null) {
+							line = ((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().getLine();
+							System.out.println("Line "+line+": Function "+((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().toString() +" doesn't return something");
+							errors++;
+				}}}
+			}
+		}else {
+			in_function = false;
+		}
+		outAPrintStatement(node);
+    }
 
+	/** Print error if the expression doesn't have numeric type - used in arithmetic and logical operations
+	 * and in assign min/ assign div operators */
+	private void arithmetic(PExpression expression, String operation){
+		int other_line=0; String type = null; AAssignStatement n; ArrayList<Node> nodes; int line;
+		ArrayList<String> real = null; ArrayList<String> passed = null;
+		if(expression instanceof AFuncCallExpression) {
+			in_function = true;
+		}
+		expression.apply(this);
+		if(in_function_call) {
+			//deep copy arguments arrays
+			real = new ArrayList<String>();
+			for(String s : real_arguments) real.add(s);
+			passed = new ArrayList<String>();
+			for(String no : passed_arguments_types) passed.add(no);
+		}
+		if(!(expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
+			|| expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression)){
+			if(expression instanceof AParExpression) {
+				PExpression par_exp = ((AParExpression)expression).getExpression();
+				if(!(par_exp instanceof AAddExpression || par_exp instanceof AMinExpression || par_exp instanceof AMultExpression 
+				|| par_exp instanceof AMultmultExpression || par_exp instanceof AModExpression || par_exp instanceof ADivExpression)) {
+					expression = par_exp;
+				}
+			}
+			if(expression instanceof ATypeExpression) {
+				line = ((ATypeExpression)expression).getId().getLine();
+				System.out.println("Line " + line + ": "+operation+" operation cannot be done on Type ");
+				errors++;
+			}else if(expression instanceof AOpenExpression) {
+				//line = 
+				System.out.println("Line " + ": "+operation+"  operation cannot be done on Open");
+				errors++;
+			}else if(expression instanceof AValueExpression) {
+				PValue val = ((AValueExpression)expression).getValue();
+				if(val instanceof ANoneValue) {
+					//line =
+					System.out.println("Line " + ": "+operation+" operation cannot be done on None");
+					errors++;
+				} else if(!(val instanceof ANumValue)) {
+					if(val instanceof AStringValue) {
+						line = ((AStringValue)val).getString().getLine();
+					}else {
+						line = ((AMethodValue)val).getId().getLine();
+					}
+					System.out.println("Line " + line + ": "+operation+" operation must be on numbers only");
+					errors++;
+				}
+			}else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
+				String id;
+				if (expression instanceof AIdExpression) {
+					id = ((AIdExpression)expression).getId().toString();
+					line = ((AIdExpression)expression).getId().getLine();
+				}else {
+					id = ((AListexpExpression)expression).getId().toString();
+					line = ((AListexpExpression)expression).getId().getLine();
+				}
+				nodes = symtable.get(id); n = null;
+				if(in_function_call) {
+					if(real.contains(id)){
+						int index = real.indexOf(id);
+						type = passed.get(index);
+					}
+				}
+				if (type==null){
+					for(int i = 0; i < nodes.size(); i++) {
+						if(nodes.get(i) instanceof AAssignStatement){
+							other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+							if(other_line > line) break;
+							else n = (AAssignStatement)nodes.get(i);
+							type = (String)getOut(n);
+						}
+					}
+				}
+				if(in_func_declaration && real_arguments == null) type = "NUMBER";
+				
+				if(type.equals("NONE")){
+					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on None");
+					errors++;
+				}else if(type.equals("TYPE")){
+					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Type");
+					errors++;
+				}else if(type.equals("OPEN")){
+					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Open");
+					errors++;
+				}else if(!type.equals("NUMBER")) {
+					System.out.println("Line " +line+ ": "+operation+" operation must be on numbers only");
+					errors++;
+				}
+			}else if(expression instanceof AFuncCallExpression) {
+				//get the function and if it has a return type, write it in the global "return_type" variable (caseAFunctionCall)
+				line = ((AFunctionCall)((AFuncCallExpression)expression).getFunctionCall()).getId().getLine();
+				type = return_type;
+				if(fun!=null) {
+					if(type==null){
+						System.out.println("Line " +line+ ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything");
+						errors++;
+					}
+					else if(type.equals("NONE")) {
+						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on None.");
+						errors++;
+					}else if(type.equals("OPEN")) { 
+						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Open.");
+						errors++;
+					}else if(type.equals("TYPE")) { 
+						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Type.");
+						errors++;
+					}else if(!type.equals("NUMBER")) {
+						System.out.println("Line " +line+ ": "+operation+" operation must be on numbers only.");
+						errors++;
+					}	
+				}
+			}else if(expression instanceof AListConExpression) {
+				//line =
+				System.out.println("Line " + ": " +"Invalid Syntax.");
+				errors++;
+		}}
+	}
 
+	/** Find the type of an expression */
+	private String getExpressionType(PExpression expression) {
+		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
+		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
+			|| expression instanceof AParExpression || expression instanceof AMinExpression || expression instanceof AMaxExpression){
+			return "NUMBER";
+		}else if(expression instanceof AValueExpression) {
+			PValue val = ((AValueExpression)expression).getValue();
+			if(val instanceof ANumValue) return "NUMBER";
+			else if (val instanceof ANoneValue) return "NONE";
+			else if (val instanceof AStringValue) return "STRING";
+		}else if(expression instanceof ATypeExpression) return  "TYPE";
+		else if(expression instanceof AOpenExpression) return "OPEN";
+		else if(expression instanceof AListConExpression) {
+			//line = 
+			System.out.println("Line " + ": " +"Invalid Syntax.");
+			errors++;
+		}else if(expression instanceof AListexpExpression ) {
+			String id = ((AListexpExpression)expression).getId().toString();
+			//if it's a global variable
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
+			int line = ((AListexpExpression)expression).getId().getLine(); int other_line;
+			for(int i = 0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement){
+					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+					if(other_line > line) break;
+					else n = (AAssignStatement)nodes.get(i);
+				}
+			}
+			return (String)getOut(n);
+		}
+		else if(expression instanceof AIdExpression) {
+			String id = ((AIdExpression)expression).getId().toString();
+			//if it's a global variable
+			ArrayList<Node> nodes = symtable.get(id); AAssignStatement n = null;
+			int line = ((AIdExpression)expression).getId().getLine(); int other_line;
+			for(int i = 0; i < nodes.size(); i++) {
+				if(nodes.get(i) instanceof AAssignStatement){
+					other_line = ((AAssignStatement)nodes.get(i)).getId().getLine();
+					if(other_line > line) break;
+					else n = (AAssignStatement)nodes.get(i);
+			}}
+			return (String)getOut(n);
+		}
+		return null;
+	}
 }
