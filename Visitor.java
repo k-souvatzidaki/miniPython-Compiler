@@ -5,11 +5,12 @@ import java.util.*;
 public class Visitor extends DepthFirstAdapter {
 
 	private Hashtable <String,ArrayList<Node>> symtable;	
-	static int errors;
+	public static int errors;
 	boolean in_function; boolean arguments_ok; boolean in_for;
 	String in_function_name; String in_for_name; Node fun;
 	ArrayList<String> arguments;
 
+	//constructor
 	Visitor(Hashtable symtable) {
 		this.symtable = symtable;
 		errors = 0;
@@ -17,6 +18,8 @@ public class Visitor extends DepthFirstAdapter {
 		in_for = false;
 	}
 
+	/** Check if a function is already defined, count arguments
+	 * If not already defined, add function and its arguments in the symbol table */
 	@Override
 	public void caseAFunction(AFunction node) {
 		inAFunction(node);
@@ -63,13 +66,11 @@ public class Visitor extends DepthFirstAdapter {
 							}
 						}
 						if (!((n_params- default_n_params > node_params - default_node_params && default_node_params==0) || (node_params - default_node_params > n_params))) {
-							System.out.println("Line " + line + ": " +" Function " + function_name +" is already defined");
+							System.out.println("Line " + line + ": " +" Function " + function_name +" is already defined.");
 							errors++;
 							flag = false;
 							break;
-						} 
-					}
-				}
+				}}}
 			}
 			if (flag) {
 				//add function in table
@@ -77,7 +78,6 @@ public class Visitor extends DepthFirstAdapter {
 				else symtable.get(function_name).add(node);
 			}
 			//proceed to check arguments
-			//BUG FIX: initialize arguments array here for no null pointers in name_exists if no args
 			arguments = new ArrayList<String>();
 			for(int i = 0; i < temp.length; i++) {
 				((PArgument) temp[i]).apply(this);
@@ -86,7 +86,6 @@ public class Visitor extends DepthFirstAdapter {
 			in_function = true;
 			in_function_name = function_name;
 			if(node.getStatement() != null) {
-				//to check if  there is a return statement in the function's statements
 				fun = node;
 				node.getStatement().apply(this);
 			}
@@ -94,10 +93,9 @@ public class Visitor extends DepthFirstAdapter {
 		}
         outAFunction(node);
 	}
-	
-	
 
-
+	/**Check for duplicate arguments inside a function */
+	@Override
 	public void caseAArgument(AArgument node) {
 		inAArgument(node);
         if(node.getId() != null) {
@@ -112,7 +110,6 @@ public class Visitor extends DepthFirstAdapter {
 		{
 			//check for duplicate argument names in the same function
 			String arg_name = node.getId().toString();
-			//BUG FIX pt2
 			arguments.add(arg_name);
 			Object temp[] = node.getCommaAssign().toArray();
 			boolean flag = true;
@@ -123,7 +120,7 @@ public class Visitor extends DepthFirstAdapter {
 				int size = arguments.size();
 				for(int k = 0; k < size; k++) {
 					if(arguments.get(k).equals(temp_id)) {
-						System.out.println("Line " + line + ": " + "Duplicate argument " + temp_id + " in function "+function_name);
+						System.out.println("Line " + line + ": " + "Duplicate argument " + temp_id + " in function "+function_name+".");
 						flag = false;
 						errors++;
 						break;
@@ -132,20 +129,19 @@ public class Visitor extends DepthFirstAdapter {
 			}
 		
 			//if no duplicates, add arguments in symbol table, else print error
-			//if(flag) {
-				//add first argument in symbol table
-				if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
-				else symtable.get(arg_name).add(node);
-				//add the rest arguments in symbol table
-				for(int i = 0; i < temp.length; i++) {
-					((PCommaAssign) temp[i]).apply(this);
-				}
-			//}
+			//add first argument in symbol table
+			if(!symtable.containsKey(arg_name)) symtable.put(arg_name,new ArrayList<Node>(Arrays.asList(node)));
+			else symtable.get(arg_name).add(node);
+			//add the rest arguments in symbol table
+			for(int i = 0; i < temp.length; i++) {
+				((PCommaAssign) temp[i]).apply(this);
+			}
 		}
         outAArgument(node);
     }
 
-	//we have checked for duplicates in the same function in caseAArgument. just add the arguments in the table
+	/** We have checked for duplicates in the same function in caseAArgument. 
+	 * just add the arguments in the symbol table */
 	@Override
 	public void inACommaAssign(ACommaAssign node) {
 		String arg_name = node.getId().toString(); //get name of the argument
@@ -153,12 +149,8 @@ public class Visitor extends DepthFirstAdapter {
 		else symtable.get(arg_name).add(node);
 	}
 	
-	// MAYBE for identifier in identifier: statement 
-	// @Override
-	// public void inAForStatement(AForStatement node) {
-    //     defaultIn(node);
-	// }
-	
+	/**A variable being assigned a value cannot be non defined
+	 * Just add the variable to the symbol table */
 	@Override
 	public void inAAssignStatement(AAssignStatement node) {
 		String var_name = node.getId().toString();
@@ -166,14 +158,15 @@ public class Visitor extends DepthFirstAdapter {
 		else symtable.get(var_name).add(node);
 	}
 	
-
-	//check if used identifiers are defined
+	/** Check if an identifier is not defined. 
+	 * Variables, unlike function, must be declared before to be used 
+	 * Do the same for type,assign minus, assign div and list statements*/
 	@Override
 	public void inAIdExpression(AIdExpression node) {
 		int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}		
 	}
@@ -183,7 +176,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -193,7 +186,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -203,7 +196,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -213,11 +206,13 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined");
+			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
 
+	/** Check if the second variable used is defined. 
+	 * Add the first variable in the symbol table */
 	@Override
 	public void caseAForStatement(AForStatement node) {
         inAForStatement(node);
@@ -232,7 +227,7 @@ public class Visitor extends DepthFirstAdapter {
 		}
 		if (!symtable.containsKey(node.getInid().toString())) {
 			int line = ((TId) node.getInid()).getLine();
-			System.out.println("Line " + line + ": " + "Name " + node.getInid().toString() +" is not defined");
+			System.out.println("Line " + line + ": " + "Name " + node.getInid().toString() +" is not defined.");
 			errors++;
 		}
 		in_for = true;
@@ -241,17 +236,17 @@ public class Visitor extends DepthFirstAdapter {
 			node.getStatement().apply(this);
 		}
 		in_for = false;
-		
         outAForStatement(node);
     }
 
-	//check if a name exists in the hashtable
+	/** Check if a name exists in the hashtable
+	 * If in a function, check arguments too
+	 * If in a for loop, check the block-local variable defined too */
 	private boolean nameExists(String id) {
 		if(symtable.containsKey(id)) {
 			ArrayList<Node> values = symtable.get(id);
 			for(int i = 0; i < values.size(); i++) {
 				if(values.get(i) instanceof AAssignStatement) return true;
-				
 			}
 		}
 		if(in_function) {
@@ -263,7 +258,5 @@ public class Visitor extends DepthFirstAdapter {
 		}
 		return false;
 	}
-
-
 
 }
