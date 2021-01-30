@@ -20,3 +20,5 @@ def add3(x,y):
    return "hello world"
 print add3(2,1)+2
 
+def a(a) : return 1
+print a(1,1) + "string"
