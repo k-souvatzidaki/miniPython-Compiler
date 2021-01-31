@@ -97,8 +97,8 @@ Productions
 						  {multmult} expr multmult expression_multmult{->New expression.multmult(expr.expression,expression_multmult.expression)};
 	expr{->expression} = {sth} something{->something.expression} |
 						 {listexp} id l_br expression r_br{->New expression.listexp(id,expression)}|
-						 {open} open l_par [lpar]:expression comma [rpar]:expression r_par{->New expression.open(lpar,rpar)}|
-						 {list_con} l_br expression comma_exp* r_br{->New expression.list_con(expression,[comma_exp])};
+						 {open} open l_par [lpar]:expression comma [rpar]:expression r_par{->New expression.open(open,lpar,rpar)}|
+						 {list_con} l_br expression comma_exp* r_br{->New expression.list_con(l_br,expression,[comma_exp])};
 	something{->expression} = {func_call} function_call{->New expression.func_call(function_call)}|
 				              {value} value{->New expression.value(value)}|
 				              {id} id{->New expression.id(id)}| 			
@@ -133,7 +133,7 @@ Productions
 	value = {method} id dot function_call {->New value.method(id,function_call)}|
 		    {num} number {->New value.num(number)}| 
 			{string} string {->New value.string(string)}|
-			{none} none {->New value.none()};
+			{none} none {->New value.none(none)};
 	
 
 	
@@ -173,8 +173,8 @@ Abstract Syntax Tree
 				 {min} value comma_v*|
 				 {par} expression |
 				 {listexp} id expression|
-				 {open} [lpar]:expression [rpar]:expression|
-				 {list_con} expression comma_exp*;
+				 {open} open [lpar]:expression [rpar]:expression|
+				 {list_con} l_br expression comma_exp*;
 				 
 	comma_v = value;
 				
@@ -200,4 +200,4 @@ Abstract Syntax Tree
 	value = {method} id function_call |
 		    {num} number | 
 			{string} string |
-			{none} ;
+			{none} none ;

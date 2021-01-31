@@ -29,8 +29,7 @@ public class Visitor2 extends DepthFirstAdapter {
 	}
 	
 	/** Check if a called function is defined with the right amount of arguments.
-	 * 
-	 */
+	 *  Store parameters in global lists to do typechecking in function's statement */
 	@Override
 	public void caseAFunctionCall(AFunctionCall node) {
         inAFunctionCall(node);
@@ -60,7 +59,7 @@ public class Visitor2 extends DepthFirstAdapter {
 
 			//check if function is defined
 			if(!symtable.containsKey(id)) {
-				System.out.println("Line " + line + ": " +"Function " + id +" is not defined.");
+				System.out.println("Line " + getLineNum(line)+ ": " +"Function " + id +" is not defined.");
 				errors++;
 			} else {
 				ArrayList<Node> nodes = symtable.get(id);
@@ -108,15 +107,14 @@ public class Visitor2 extends DepthFirstAdapter {
 								}
 								passed_types.add(type);
 							}
-							
 							break;
 				}}}
 				if(!flag) { 
-					System.out.println("Line " + line + ": " +"Function " + id +" is not defined.");
+					System.out.println("Line " + getLineNum(line)+ ": Function " + id +" is not defined.");
 					errors++;
 				}
 				if(!enough_args) {
-					System.out.println("Line " + line + ": " +"Function " + id +" with "+params+" arguments is not defined.");
+					System.out.println("Line " +getLineNum(line) + ": Function " + id +" with "+params+" arguments is not defined.");
 					errors++;
 				}
 			}
@@ -138,7 +136,7 @@ public class Visitor2 extends DepthFirstAdapter {
 	}
 	
 
-	/** Operations typechecking for variables and function calls */ 
+	/** Operations (logical and arithmetic) typechecking (for variables, function calls, or values) */ 
 	//ADD
 	@Override
 	public void caseAAddExpression(AAddExpression node) {
@@ -223,7 +221,6 @@ public class Visitor2 extends DepthFirstAdapter {
 		}
         outAMultmultExpression(node);
 	}
-	/** Same for logical operations */ 
 	//LESS
 	@Override
 	public void caseALessComparisonOr(ALessComparisonOr node) {
@@ -280,7 +277,7 @@ public class Visitor2 extends DepthFirstAdapter {
         }
         outALeqComparisonOr(node);
 	}
-	//NEQ
+	//NOT EQUALS
 	@Override
 	public void caseANeqComparisonOr(ANeqComparisonOr node) {
         inANeqComparisonOr(node);
@@ -333,7 +330,7 @@ public class Visitor2 extends DepthFirstAdapter {
 			}}}
 			if(in_func_declaration && real_arguments == null) type = "NUMBER";
 			if(!type.equals("NUMBER")){
-				System.out.println("Line " + line + ": Assign Minus operation must be on numbers only.");
+				System.out.println("Line " + getLineNum(line) + ": Assign Minus operation must be on numbers only.");
 				errors++;
 			}
         }
@@ -368,7 +365,7 @@ public class Visitor2 extends DepthFirstAdapter {
 			}}}
 			if(in_func_declaration && real_arguments == null) type = "NUMBER";
 			if(!type.equals("NUMBER")){
-				System.out.println("Line " + line + ": Assign Minus operation must be on numbers only.");
+				System.out.println("Line " + getLineNum(line) + ": Assign Minus operation must be on numbers only.");
 				errors++;
 			}
         }
@@ -393,7 +390,7 @@ public class Visitor2 extends DepthFirstAdapter {
         outAListexpExpression(node);
     }
 	//List Assign
-	/** Also, If the expression is a function call, check if it returns something */
+	/** lists can only be assigned string or numeric values */
 	@Override
 	public void caseAListStatement(AListStatement node) {
         inAListStatement(node);
@@ -406,16 +403,14 @@ public class Visitor2 extends DepthFirstAdapter {
         }
         if(node.getRbr() != null) {
 			node.getRbr().apply(this);
-			//function call return something?
-
         }
         outAListStatement(node);
     }
 
 	
-	/** Store the type of an id in the OUT hashtable 
+	/** Store the type of an id in the OUT hashtable, based on the expression assigned to it.
 	 * If the expression is a function call, check if it returns something
-	*/
+	 * and add the return type to the hashtable */
 	public void caseAAssignStatement(AAssignStatement node) {
         inAAssignStatement(node);
         if(node.getId() != null) {
@@ -459,9 +454,17 @@ public class Visitor2 extends DepthFirstAdapter {
 		else if(exp instanceof ATypeExpression) type = "TYPE";
 		else if(exp instanceof  AListConExpression) {
 			AListConExpression list = (AListConExpression) exp;
-			if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof ANumValue) return_type = "NUMBER";
-			else if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof AStringValue) return_type = "STRING";
-			else System.out.println("Line "+": Lists should be initialized with numbers or strings.");
+			if(list.getExpression() instanceof AValueExpression) {
+				PValue val = ((AValueExpression)list.getExpression()).getValue();
+				if(val instanceof ANumValue) type = "NUMBER";
+				else if(val instanceof AStringValue) type = "STRING";
+			}
+			if(type == null) {
+				int line = list.getLBr().getLine();
+				System.out.println("Line "+getLineNum(line)+": Lists should be initialized with numbers or strings.");
+				type = "ERROR";
+				errors++;
+			}
 		}else if(exp instanceof AFuncCallExpression) {
 			type = return_type;
 		} else if(exp instanceof AAddExpression || exp instanceof AMinusExpression || exp instanceof ADivExpression 
@@ -470,11 +473,10 @@ public class Visitor2 extends DepthFirstAdapter {
 					type = "NUMBER";
 		}
 		setOut(node,type);
-
         outAAssignStatement(node);
     }
 
-	/** Check the return statement of a function to use it as a type for function calls in expressions */
+	/** Check the return statement of a function to use it as a return type for function calls in expressions */
 	@Override
 	public void inAReturnStatement(AReturnStatement node) {
 		PExpression expression = node.getExpression();
@@ -492,10 +494,10 @@ public class Visitor2 extends DepthFirstAdapter {
 		else if(expression instanceof AOpenExpression) { return_type = "OPEN"; in_function = false; }
 		else if(expression instanceof AListConExpression) {
 			AListConExpression list = (AListConExpression) expression;
-			//int line = 
+			int line = list.getLBr().getLine();
 			if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof ANumValue) return_type = "NUMBER";
 			else if(list.getExpression() instanceof AValueExpression && ((AValueExpression)list.getExpression()).getValue() instanceof AStringValue) return_type = "STRING";
-			else System.out.println("Line : Lists should be initialized with numbers or strings.");
+			else System.out.println("Line "+getLineNum(line)+": Lists should be initialized with numbers or strings.");
 			in_function = false;
 		}
 		else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
@@ -526,7 +528,7 @@ public class Visitor2 extends DepthFirstAdapter {
 		}}}}
 	}
 
-	/**Check if a function in a print statement returns something */
+	/**Check if a function called in a print statement returns something */
 	@Override
 	public void caseAPrintStatement(APrintStatement node) {
 		inAPrintStatement(node);
@@ -537,7 +539,7 @@ public class Visitor2 extends DepthFirstAdapter {
 				if(node.getExpression() instanceof AFuncCallExpression) {
 					if(return_type == null) {
 						line = ((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().getLine();
-						System.out.println("Line "+line+ ": Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something.");
+						System.out.println("Line "+getLineNum(line)+ ": Function "+((AFunctionCall)((AFuncCallExpression)node.getExpression()).getFunctionCall()).getId().toString() +" doesn't return something.");
 						errors++;
 			}}}
 			{
@@ -547,7 +549,7 @@ public class Visitor2 extends DepthFirstAdapter {
 					if(((ACommaExp)((PCommaExp) temp[i])).getExpression() instanceof AFuncCallExpression) { 
 						if(return_type == null) {
 							line = ((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().getLine();
-							System.out.println("Line "+line+": Function "+((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().toString() +" doesn't return something.");
+							System.out.println("Line "+getLineNum(line)+": Function "+((AFunctionCall)((AFuncCallExpression)((ACommaExp)((PCommaExp) temp[i])).getExpression()).getFunctionCall()).getId().toString() +" doesn't return something.");
 							errors++;
 				}}}
 			}
@@ -584,17 +586,17 @@ public class Visitor2 extends DepthFirstAdapter {
 			}
 			if(expression instanceof ATypeExpression) {
 				line = ((ATypeExpression)expression).getId().getLine();
-				System.out.println("Line " + line + ": "+operation+" operation cannot be done on Type.");
+				System.out.println("Line " + getLineNum(line) + ": "+operation+" operation cannot be done on Type.");
 				errors++;
 			}else if(expression instanceof AOpenExpression) {
-				//line = 
-				System.out.println("Line " + ": "+operation+"  operation cannot be done on Open.");
+				line = ((AOpenExpression)expression).getOpen().getLine();
+				System.out.println("Line " + getLineNum(line) +": "+operation+"  operation cannot be done on Open.");
 				errors++;
 			}else if(expression instanceof AValueExpression) {
 				PValue val = ((AValueExpression)expression).getValue();
 				if(val instanceof ANoneValue) {
-					//line =
-					System.out.println("Line " + ": "+operation+" operation cannot be done on None.");
+					line = ((ANoneValue)val).getNone().getLine();
+					System.out.println("Line " +getLineNum(line) +": "+operation+" operation cannot be done on None.");
 					errors++;
 				} else if(!(val instanceof ANumValue)) {
 					if(val instanceof AStringValue) {
@@ -602,7 +604,7 @@ public class Visitor2 extends DepthFirstAdapter {
 					}else {
 						line = ((AMethodValue)val).getId().getLine();
 					}
-					System.out.println("Line " + line + ": "+operation+" operation must be on numbers only.");
+					System.out.println("Line " + getLineNum(line) + ": "+operation+" operation must be on numbers only.");
 					errors++;
 				}
 			}else if(expression instanceof AIdExpression || expression instanceof AListexpExpression) {
@@ -634,16 +636,16 @@ public class Visitor2 extends DepthFirstAdapter {
 				if(in_func_declaration && real_arguments == null) type = "NUMBER";
 				
 				if(type.equals("NONE")){
-					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on None.");
+					System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on None.");
 					errors++;
 				}else if(type.equals("TYPE")){
-					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Type.");
+					System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on Type.");
 					errors++;
 				}else if(type.equals("OPEN")){
-					System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Open.");
+					System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on Open.");
 					errors++;
 				}else if(!type.equals("NUMBER")) {
-					System.out.println("Line " +line+ ": "+operation+" operation must be on numbers only.");
+					System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation must be on numbers only.");
 					errors++;
 				}
 			}else if(expression instanceof AFuncCallExpression) {
@@ -652,31 +654,32 @@ public class Visitor2 extends DepthFirstAdapter {
 				type = return_type;
 				if(fun!=null) {
 					if(type==null){
-						System.out.println("Line " +line+ ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything.");
+						System.out.println("Line " +getLineNum(line)+ ": " +"Function "+ ((AFunction)fun).getId().toString()+" doesn't return anything.");
 						errors++;
 					}
 					else if(type.equals("NONE")) {
-						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on None.");
+						System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on None.");
 						errors++;
 					}else if(type.equals("OPEN")) { 
-						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Open.");
+						System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on Open.");
 						errors++;
 					}else if(type.equals("TYPE")) { 
-						System.out.println("Line " +line+ ": "+operation+" operation cannot be done on Type.");
+						System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation cannot be done on Type.");
 						errors++;
 					}else if(!type.equals("NUMBER")) {
-						System.out.println("Line " +line+ ": "+operation+" operation must be on numbers only.");
+						System.out.println("Line " +getLineNum(line)+ ": "+operation+" operation must be on numbers only.");
 						errors++;
 					}	
 				}
 			}else if(expression instanceof AListConExpression) {
-				//line =
-				System.out.println("Line " + ": " +"Invalid Syntax.");
+				line = ((AListConExpression)expression).getLBr().getLine();
+				System.out.println("Line " +getLineNum(line)+": Invalid Syntax.");
 				errors++;
 		}}
 	}
 
-	/** Find the type of an expression */
+	/** Find the type of an expression 
+	 * Used to give types to parameters in function calls */
 	private String getExpressionType(PExpression expression) {
 		if (expression instanceof AAddExpression || expression instanceof AMinExpression || expression instanceof AMultExpression 
 		    || expression instanceof AMultmultExpression || expression instanceof AModExpression || expression instanceof ADivExpression 
@@ -690,8 +693,8 @@ public class Visitor2 extends DepthFirstAdapter {
 		}else if(expression instanceof ATypeExpression) return  "TYPE";
 		else if(expression instanceof AOpenExpression) return "OPEN";
 		else if(expression instanceof AListConExpression) {
-			//line = 
-			System.out.println("Line " + ": " +"Invalid Syntax.");
+			int line = ((AListConExpression)expression).getLBr().getLine();
+			System.out.println("Line " +line+ ": Invalid Syntax.");
 			errors++;
 		}else if(expression instanceof AListexpExpression ) {
 			String id = ((AListexpExpression)expression).getId().toString();
@@ -721,5 +724,10 @@ public class Visitor2 extends DepthFirstAdapter {
 			return (String)getOut(n);
 		}
 		return null;
+	}
+
+	/** print correct line numbers */
+	private int getLineNum(int line) {
+		return (int)Math.ceil(line/2)+1;
 	}
 }

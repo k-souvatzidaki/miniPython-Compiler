@@ -66,7 +66,7 @@ public class Visitor extends DepthFirstAdapter {
 							}
 						}
 						if (!((n_params- default_n_params > node_params - default_node_params && default_node_params==0) || (node_params - default_node_params > n_params))) {
-							System.out.println("Line " + line + ": " +" Function " + function_name +" is already defined.");
+							System.out.println("Line " + getLineNum(line) + ": " +" Function " + function_name +" is already defined.");
 							errors++;
 							flag = false;
 							break;
@@ -120,7 +120,7 @@ public class Visitor extends DepthFirstAdapter {
 				int size = arguments.size();
 				for(int k = 0; k < size; k++) {
 					if(arguments.get(k).equals(temp_id)) {
-						System.out.println("Line " + line + ": " + "Duplicate argument " + temp_id + " in function "+function_name+".");
+						System.out.println("Line " + getLineNum(line) + ": " + "Duplicate argument " + temp_id + " in function "+function_name+".");
 						flag = false;
 						errors++;
 						break;
@@ -166,7 +166,7 @@ public class Visitor extends DepthFirstAdapter {
 		int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}		
 	}
@@ -176,7 +176,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -186,7 +186,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -196,7 +196,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -206,7 +206,7 @@ public class Visitor extends DepthFirstAdapter {
         int line = ((TId) node.getId()).getLine();
 		String id = node.getId().toString();
 		if(!nameExists(id)) {
-			System.out.println("Line " + line + ": " +"Name " + id +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " +"Name " + id +" is not defined.");
 			errors++;
 		}
 	}
@@ -227,7 +227,7 @@ public class Visitor extends DepthFirstAdapter {
 		}
 		if (!symtable.containsKey(node.getInid().toString())) {
 			int line = ((TId) node.getInid()).getLine();
-			System.out.println("Line " + line + ": " + "Name " + node.getInid().toString() +" is not defined.");
+			System.out.println("Line " + getLineNum(line) + ": " + "Name " + node.getInid().toString() +" is not defined.");
 			errors++;
 		}
 		in_for = true;
@@ -259,4 +259,8 @@ public class Visitor extends DepthFirstAdapter {
 		return false;
 	}
 
+	/** print correct line numbers */
+	private int getLineNum(int line) {
+		return (int)Math.ceil(line/2)+1;
+	}
 }
