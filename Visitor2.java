@@ -694,7 +694,7 @@ public class Visitor2 extends DepthFirstAdapter {
 		else if(expression instanceof AOpenExpression) return "OPEN";
 		else if(expression instanceof AListConExpression) {
 			int line = ((AListConExpression)expression).getLBr().getLine();
-			System.out.println("Line " +line+ ": Invalid Syntax.");
+			System.out.println("Line " +getLineNum(line)+ ": Invalid Syntax.");
 			errors++;
 		}else if(expression instanceof AListexpExpression ) {
 			String id = ((AListexpExpression)expression).getId().toString();

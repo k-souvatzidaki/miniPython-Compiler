@@ -24,3 +24,10 @@ k = 3
 l = ["a","b"]
 def a(a) : return 1
 print (a(1,1) + open(1,2)) - l[1] / None
+
+def bad(a,b=1): print b
+print bad()
+
+def r(a): return type(a)
+def s(): return r(1)
+print s() - 2
