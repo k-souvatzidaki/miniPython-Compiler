@@ -18,10 +18,17 @@ MiniPython's instruction set is described in the Backus–Naur form (or Backus n
 In the **minipython.grammar** file, **tokens** are described for the lexical analysis, and **productions** (rules) for the syntax analysis.
 
 ## Abstract Syntax Tree
-...
+In the **Abstract Systax Tree** section of the .grammar file, syntax rules where redefined and the non-essential tokens where removed. Only identifiers and numbers where preserved, as those are needed for the semantic analysis.
 
 ## Semantic analysis - Semantic Errors
-...
+Two **Visitors**, implemented in **Java** and based on the classes **Sablecc** creates. Both Visitors traverse the AST, in order to **spot semantic errors**, **create a symbol table**, and define **types** for variables and **return types** for functions. The compiler recognises the following semantic errors:
+- Use of non defined variable.
+- Use of non defined function.
+- Function redefinition with the samenumber of arguments.
+- Parameters with the same name defined in a function.
+- Wrong number of parameters passed in a function call.
+- Non-numbers used in arithmetic and logical operations, functions' return types included.
+- Functions with no return statement used in operations or print statements.
 
 ## Rules - Future Work
 Some special rules apply on this compiler:
