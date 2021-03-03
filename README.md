@@ -24,7 +24,7 @@ In the **Abstract Systax Tree** section of the .grammar file, syntax rules where
 Two **Visitors**, implemented in **Java** and based on the classes **Sablecc** creates. Both Visitors traverse the AST, in order to **spot semantic errors**, **create a symbol table**, and define **types** for variables and **return types** for functions. The compiler recognises the following semantic errors:
 - Use of non defined variable.
 - Use of non defined function.
-- Function redefinition with the samenumber of arguments.
+- Function redefinition with the same number of arguments.
 - Parameters with the same name defined in a function.
 - Wrong number of parameters passed in a function call.
 - Non-numbers used in arithmetic and logical operations, functions' return types included.
@@ -41,7 +41,11 @@ Some special rules apply on this compiler:
 We used the [SableCC](https://sablecc.org/) parser generator to create this compiler.
 
 ## How to run the compiler
-...
+~~~~
+>sablecc minipython.grammar
+>javac *.java
+>java ParserTest example.py
+~~~~
 
 ## Group
 [Themelina Kouzoumpasi](https://github.com/themelinaKz)
